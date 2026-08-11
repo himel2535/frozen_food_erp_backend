@@ -35,6 +35,11 @@ import {
   WorkflowApproval,
   AuditLog,
   Notification,
+  CashboxEntry,
+  TrialBalanceLine,
+  ProfitLossLine,
+  BalanceSheetLine,
+  SalarySheetEntry,
 } from '../models/extendedResources.js';
 
 function registerCrud(router: Router, path: string, ctrl: ReturnType<typeof createCrudController>) {
@@ -90,6 +95,11 @@ const EXTENDED_RESOURCES: ResourceDef[] = [
   { path: '/workflow-approvals', model: WorkflowApproval, resourceName: 'Workflow approval', searchFields: ['legacyId', 'name', 'module'], legacyIdPrefix: 'WF' },
   { path: '/audit-logs', model: AuditLog, resourceName: 'Audit log', searchFields: ['legacyId', 'action', 'user'], legacyIdPrefix: 'AUD' },
   { path: '/notifications', model: Notification, resourceName: 'Notification', searchFields: ['legacyId', 'title'], legacyIdPrefix: 'NOT' },
+  { path: '/cashbox', model: CashboxEntry, resourceName: 'Cashbox entry', searchFields: ['legacyId', 'party', 'type'], legacyIdPrefix: 'CB' },
+  { path: '/trial-balance', model: TrialBalanceLine, resourceName: 'Trial balance line', searchFields: ['legacyId', 'accountCode', 'accountName'], legacyIdPrefix: 'TB' },
+  { path: '/profit-loss', model: ProfitLossLine, resourceName: 'Profit loss line', searchFields: ['legacyId', 'lineItem', 'category'], legacyIdPrefix: 'PL' },
+  { path: '/balance-sheet', model: BalanceSheetLine, resourceName: 'Balance sheet line', searchFields: ['legacyId', 'lineItem', 'category'], legacyIdPrefix: 'BS' },
+  { path: '/salary-sheet', model: SalarySheetEntry, resourceName: 'Salary sheet entry', searchFields: ['legacyId', 'employee', 'employeeId'], legacyIdPrefix: 'SSHT' },
 ];
 
 export const EXTENDED_API_ENDPOINTS: Record<string, string> = Object.fromEntries(
