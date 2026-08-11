@@ -1,0 +1,12 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+
+# Secrets — never commit (copy .env.example → .env locally)
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+!.env.example
