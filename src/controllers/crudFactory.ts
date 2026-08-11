@@ -6,15 +6,78 @@ import { asyncHandler, parsePagination, paginationMeta } from '../utils/asyncHan
 
 type SearchFields = string[];
 
+function generateUniqueId(prefix: string): string {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
+}
+
+function isEmpty(value: unknown): boolean {
+  return value == null || String(value).trim() === '';
+}
+
+function serializeLeanDoc(doc: Record<string, unknown>) {
+  const id = String(doc._id ?? doc.id ?? '');
+  const { _id, __v, ...rest } = doc;
+  return { ...rest, id };
+}
+
 export function createCrudController<T extends Record<string, unknown>>(
   model: Model<T>,
   options: {
     resourceName: string;
     searchFields?: SearchFields;
     defaultSort?: Record<string, 1 | -1>;
+    /** Always assign a fresh legacyId on create */
+    legacyIdPrefix?: string;
+    /** Other unique-ish fields to auto-fill on create when empty, e.g. { sku: 'SKU' } */
+    autoFields?: Record<string, string>;
   },
 ) {
-  const { resourceName, searchFields = ['name'], defaultSort = { createdAt: -1 } } = options;
+  const {
+    resourceName,
+    searchFields = ['name'],
+    defaultSort = { createdAt: -1 },
+    legacyIdPrefix,
+    autoFields = {},
+  } = options;
+
+  function preparePayload(body: Record<string, unknown>, forCreate: boolean): Record<string, unknown> {
+    const payload: Record<string, unknown> = { tenantId: 'default', ...body };
+
+    for (const key of ['id', '_id', '_mongoId', 'legacyId', 'sku', 'employeeCode', 'ticketNo', 'receiptNo', 'code']) {
+      if (key in payload && isEmpty(payload[key])) delete payload[key];
+    }
+
+    if (forCreate) {
+      delete payload.id;
+      delete payload._id;
+      delete payload._mongoId;
+      delete payload.legacyId;
+      if (legacyIdPrefix) {
+        payload.legacyId = generateUniqueId(legacyIdPrefix);
+      }
+      for (const [field, prefix] of Object.entries(autoFields)) {
+        if (isEmpty(payload[field])) {
+          payload[field] = generateUniqueId(prefix);
+        }
+      }
+    } else if (!isEmpty(payload.legacyId)) {
+      payload.legacyId = String(payload.legacyId).trim();
+    } else {
+      delete payload.legacyId;
+    }
+
+    return payload;
+  }
+
+  async function createDocument(body: Record<string, unknown>) {
+    try {
+      return await model.create(preparePayload(body, true));
+    } catch (err) {
+      const code = (err as { code?: number }).code;
+      if (code !== 11000) throw err;
+      return await model.create(preparePayload(body, true));
+    }
+  }
 
   const list = asyncHandler(async (req: Request, res: Response) => {
     const { page, limit, skip, search } = parsePagination(req.query);
@@ -36,23 +99,27 @@ export function createCrudController<T extends Record<string, unknown>>(
       model.countDocuments(filter),
     ]);
 
-    sendSuccess(res, items, paginationMeta(total, page, limit));
+    sendSuccess(
+      res,
+      items.map((doc) => serializeLeanDoc(doc as Record<string, unknown>)),
+      paginationMeta(total, page, limit),
+    );
   });
 
   const getById = asyncHandler(async (req: Request, res: Response) => {
     const doc = await model.findById(req.params.id).lean();
     if (!doc) throw notFound(`${resourceName} not found`);
-    sendSuccess(res, doc);
+    sendSuccess(res, serializeLeanDoc(doc as Record<string, unknown>));
   });
 
   const create = asyncHandler(async (req: Request, res: Response) => {
-    const payload = { tenantId: 'default', ...req.body };
-    const doc = await model.create(payload);
+    const doc = await createDocument(req.body as Record<string, unknown>);
     sendSuccess(res, doc.toJSON(), undefined, 201);
   });
 
   const update = asyncHandler(async (req: Request, res: Response) => {
-    const doc = await model.findByIdAndUpdate(req.params.id, req.body, {
+    const payload = preparePayload(req.body as Record<string, unknown>, false);
+    const doc = await model.findByIdAndUpdate(req.params.id, payload, {
       new: true,
       runValidators: true,
     }).lean();
@@ -69,8 +136,7 @@ export function createCrudController<T extends Record<string, unknown>>(
   const bulkSeed = asyncHandler(async (req: Request, res: Response) => {
     const rows = req.body;
     if (!Array.isArray(rows)) throw badRequest('Body must be an array of records');
-    const tenantId = String(req.query.tenantId ?? 'default');
-    const prepared = rows.map((row) => ({ tenantId, ...row }));
+    const prepared = rows.map((row) => preparePayload(row as Record<string, unknown>, true));
     const inserted = await model.insertMany(prepared, { ordered: false }).catch((err) => {
       if (err?.insertedDocs) return err.insertedDocs;
       throw err;
