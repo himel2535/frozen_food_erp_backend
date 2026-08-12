@@ -44,6 +44,12 @@ import {
   getFinancialReport,
   getHrReport,
 } from '../controllers/reportsController.js';
+import {
+  getBalanceSheetSummary,
+  getProfitLossSummary,
+  getTrialBalanceSummary,
+} from '../controllers/accountingController.js';
+import { getSalarySheetSummary } from '../controllers/payrollController.js';
 import { cacheGetResponse } from '../middleware/responseCache.js';
 
 const DROPDOWN_CACHE_MS = 5 * 60 * 1000;
@@ -290,6 +296,11 @@ apiRouter.get('/', (_req, res) => {
 });
 
 apiRouter.get('/dashboard/summary', cacheGetResponse(60_000), getDashboardSummary);
+
+apiRouter.get('/balance-sheet/summary', cacheGetResponse(REPORT_CACHE_MS), getBalanceSheetSummary);
+apiRouter.get('/profit-loss/summary', cacheGetResponse(REPORT_CACHE_MS), getProfitLossSummary);
+apiRouter.get('/trial-balance/summary', cacheGetResponse(REPORT_CACHE_MS), getTrialBalanceSummary);
+apiRouter.get('/salary-sheet/summary', cacheGetResponse(REPORT_CACHE_MS), getSalarySheetSummary);
 
 apiRouter.get('/reports/sales', cacheGetResponse(REPORT_CACHE_MS), getSalesReport);
 apiRouter.get('/reports/purchases', cacheGetResponse(REPORT_CACHE_MS), getPurchaseReport);

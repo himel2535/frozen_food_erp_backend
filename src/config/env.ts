@@ -20,4 +20,5 @@ export const env = {
     ?? 'http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001',
   apiKey: process.env.API_KEY ?? '',
   isProd: (process.env.NODE_ENV ?? 'development') === 'production',
+  redisUrl: process.env.REDIS_URL ?? '',
 };

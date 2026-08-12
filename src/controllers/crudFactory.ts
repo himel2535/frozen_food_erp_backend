@@ -5,6 +5,7 @@ import { sendSuccess, sendMessage } from '../utils/apiResponse.js';
 import { asyncHandler, parsePagination, paginationMeta } from '../utils/asyncHandler.js';
 import { listFieldsFor } from '../config/listFieldProfiles.js';
 import { clearResponseCache } from '../middleware/responseCache.js';
+import { posCategoryMongoFilter } from '../utils/posCategoryFilter.js';
 
 type SearchFields = string[];
 
@@ -94,6 +95,22 @@ export function createCrudController<T extends Record<string, unknown>>(
     const status = req.query.status;
     if (status && status !== 'all') {
       (filter as Record<string, unknown>).status = status;
+    }
+
+    for (const key of ['category', 'section', 'department', 'period', 'productType', 'type'] as const) {
+      const val = req.query[key];
+      if (val && val !== 'all') {
+        (filter as Record<string, unknown>)[key] = String(val);
+      }
+    }
+
+    const posCategory = req.query.posCategory;
+    if (posCategory && posCategory !== 'all') {
+      const posFilter = posCategoryMongoFilter(String(posCategory));
+      if (posFilter) {
+        const existing = filter as Record<string, unknown>;
+        existing.$and = [...(Array.isArray(existing.$and) ? existing.$and : []), posFilter];
+      }
     }
 
     const listProjection = listFieldsFor(resourceName);

@@ -1,9 +1,11 @@
 import { createApp } from './app.js';
 import { connectDatabase, disconnectDatabase } from './config/database.js';
 import { env } from './config/env.js';
+import { disconnectRedis, initRedis } from './lib/redisClient.js';
 
 async function main() {
   await connectDatabase();
+  await initRedis();
 
   const app = createApp();
   const server = app.listen(env.port, () => {
@@ -15,6 +17,7 @@ async function main() {
   const shutdown = async (signal: string) => {
     console.log(`\n[server] ${signal} received — shutting down`);
     server.close(async () => {
+      await disconnectRedis();
       await disconnectDatabase();
       process.exit(0);
     });
