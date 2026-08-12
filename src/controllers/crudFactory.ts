@@ -33,6 +33,8 @@ export function createCrudController<T extends Record<string, unknown>>(
     legacyIdPrefix?: string;
     /** Other unique-ish fields to auto-fill on create when empty, e.g. { sku: 'SKU' } */
     autoFields?: Record<string, string>;
+    /** Clear GET list cache for this path prefix after mutations (e.g. /api/v1/products). */
+    listCachePrefix?: string;
   },
 ) {
   const {
@@ -41,7 +43,13 @@ export function createCrudController<T extends Record<string, unknown>>(
     defaultSort = { createdAt: -1 },
     legacyIdPrefix,
     autoFields = {},
+    listCachePrefix,
   } = options;
+
+  function clearCaches() {
+    clearResponseCache('/api/v1/dashboard/summary');
+    if (listCachePrefix) clearResponseCache(listCachePrefix);
+  }
 
   function preparePayload(body: Record<string, unknown>, forCreate: boolean): Record<string, unknown> {
     const payload: Record<string, unknown> = { tenantId: 'default', ...body };
@@ -139,7 +147,7 @@ export function createCrudController<T extends Record<string, unknown>>(
 
   const create = asyncHandler(async (req: Request, res: Response) => {
     const doc = await createDocument(req.body as Record<string, unknown>);
-    clearResponseCache('/api/v1/dashboard/summary');
+    clearCaches();
     sendSuccess(res, doc.toJSON(), undefined, 201);
   });
 
@@ -150,14 +158,14 @@ export function createCrudController<T extends Record<string, unknown>>(
       runValidators: true,
     }).lean();
     if (!doc) throw notFound(`${resourceName} not found`);
-    clearResponseCache('/api/v1/dashboard/summary');
+    clearCaches();
     sendSuccess(res, doc);
   });
 
   const remove = asyncHandler(async (req: Request, res: Response) => {
     const doc = await model.findByIdAndDelete(req.params.id);
     if (!doc) throw notFound(`${resourceName} not found`);
-    clearResponseCache('/api/v1/dashboard/summary');
+    clearCaches();
     sendMessage(res, `${resourceName} deleted`);
   });
 
@@ -169,6 +177,7 @@ export function createCrudController<T extends Record<string, unknown>>(
       if (err?.insertedDocs) return err.insertedDocs;
       throw err;
     });
+    clearCaches();
     sendSuccess(res, inserted, { count: inserted.length }, 201);
   });
 

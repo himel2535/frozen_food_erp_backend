@@ -84,6 +84,7 @@ const productCtrl = createCrudController(Product, {
   searchFields: ['legacyId', 'name', 'sku', 'category'],
   legacyIdPrefix: 'PROD',
   autoFields: { sku: 'SKU' },
+  listCachePrefix: '/api/v1/products',
 });
 
 const supplierCtrl = createCrudController(Supplier, {
@@ -183,6 +184,7 @@ const categoryCtrl = createCrudController(Category, {
   searchFields: ['legacyId', 'name', 'code', 'type'],
   legacyIdPrefix: 'CAT',
   autoFields: { code: 'CAT' },
+  listCachePrefix: '/api/v1/categories',
 });
 
 const unitCtrl = createCrudController(Unit, {
@@ -190,12 +192,14 @@ const unitCtrl = createCrudController(Unit, {
   searchFields: ['legacyId', 'name', 'code', 'symbol'],
   legacyIdPrefix: 'UOM',
   autoFields: { code: 'UOM' },
+  listCachePrefix: '/api/v1/units',
 });
 
 const warehouseCtrl = createCrudController(Warehouse, {
   resourceName: 'Warehouse',
   searchFields: ['legacyId', 'name', 'location', 'manager'],
   legacyIdPrefix: 'WH',
+  listCachePrefix: '/api/v1/warehouses',
 });
 
 const rawMaterialCtrl = createCrudController(RawMaterial, {
