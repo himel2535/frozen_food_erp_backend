@@ -9,6 +9,12 @@ dns.setDefaultResultOrder('ipv4first');
 
 let memoryServer: MongoMemoryServer | null = null;
 
+declare global {
+  // Reuse one Mongoose connection across hot reloads in dev.
+  // eslint-disable-next-line no-var
+  var __mongooseConnected: boolean | undefined;
+}
+
 function printMongoSetupHelp() {
   console.error(`
 [db] MongoDB is not running on ${env.mongoUri}
@@ -34,6 +40,10 @@ Fix options (pick one):
 }
 
 export async function connectDatabase(): Promise<void> {
+  if (global.__mongooseConnected && mongoose.connection.readyState === 1) {
+    return;
+  }
+
   mongoose.set('strictQuery', true);
 
   let uri = env.mongoUri;
@@ -53,7 +63,9 @@ export async function connectDatabase(): Promise<void> {
 
     await mongoose.connect(uri, {
       serverSelectionTimeoutMS: env.useMemoryDb ? 30000 : 20000,
+      maxPoolSize: 20,
     });
+    global.__mongooseConnected = true;
     console.log(`[db] MongoDB connected${env.useMemoryDb ? '' : ` → ${sanitizeMongoUri(env.mongoUri)}`}`);
   } catch (err) {
     const message = String(err);
@@ -71,6 +83,7 @@ export async function connectDatabase(): Promise<void> {
 
 export async function disconnectDatabase(): Promise<void> {
   await mongoose.disconnect();
+  global.__mongooseConnected = false;
   if (memoryServer) {
     await memoryServer.stop();
     memoryServer = null;

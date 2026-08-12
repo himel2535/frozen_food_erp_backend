@@ -29,6 +29,8 @@ const invoiceSchema = new Schema(
 
 invoiceSchema.index({ tenantId: 1, legacyId: 1 }, { unique: true, sparse: true });
 invoiceSchema.index({ tenantId: 1, issueDate: -1, date: -1 });
+invoiceSchema.index({ tenantId: 1, status: 1, createdAt: -1 });
+invoiceSchema.index({ tenantId: 1, customerId: 1, issueDate: -1 });
 
 export type InvoiceDocument = InferSchemaType<typeof invoiceSchema> & { _id: mongoose.Types.ObjectId };
 

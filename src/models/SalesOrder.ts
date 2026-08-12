@@ -27,6 +27,8 @@ const salesOrderSchema = new Schema(
 
 salesOrderSchema.index({ tenantId: 1, legacyId: 1 }, { unique: true, sparse: true });
 salesOrderSchema.index({ tenantId: 1, date: -1 });
+salesOrderSchema.index({ tenantId: 1, status: 1, createdAt: -1 });
+salesOrderSchema.index({ tenantId: 1, customerId: 1, createdAt: -1 });
 
 export type SalesOrderDocument = InferSchemaType<typeof salesOrderSchema> & { _id: mongoose.Types.ObjectId };
 

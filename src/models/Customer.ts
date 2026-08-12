@@ -38,6 +38,8 @@ const customerSchema = new Schema(
 customerSchema.index({ tenantId: 1, legacyId: 1 }, { unique: true, sparse: true });
 customerSchema.index({ tenantId: 1, name: 1 });
 customerSchema.index({ tenantId: 1, company: 'text', name: 'text', email: 'text' });
+customerSchema.index({ tenantId: 1, status: 1, createdAt: -1 });
+customerSchema.index({ tenantId: 1, totalDue: -1 });
 
 export type CustomerDocument = InferSchemaType<typeof customerSchema> & { _id: mongoose.Types.ObjectId };
 

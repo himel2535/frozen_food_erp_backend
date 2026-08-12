@@ -33,6 +33,8 @@ const leadSchema = new Schema(
 
 leadSchema.index({ tenantId: 1, legacyId: 1 }, { unique: true, sparse: true });
 leadSchema.index({ tenantId: 1, name: 'text', company: 'text', email: 'text' });
+leadSchema.index({ tenantId: 1, status: 1, createdAt: -1 });
+leadSchema.index({ tenantId: 1, assignedRepId: 1, status: 1 });
 
 export type LeadDocument = InferSchemaType<typeof leadSchema> & { _id: mongoose.Types.ObjectId };
 

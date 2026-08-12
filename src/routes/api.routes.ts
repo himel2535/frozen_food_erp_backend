@@ -34,9 +34,21 @@ import {
   StockAdjustment,
 } from '../models/index.js';
 import { registerExtendedRoutes, EXTENDED_API_ENDPOINTS } from './extendedRoutes.js';
+import { getDashboardSummary } from '../controllers/dashboardController.js';
+import { cacheGetResponse } from '../middleware/responseCache.js';
 
-function registerCrud(router: Router, path: string, ctrl: ReturnType<typeof createCrudController>) {
-  router.get(path, ctrl.list);
+const DROPDOWN_CACHE_MS = 5 * 60 * 1000;
+
+function registerCrud(
+  router: Router,
+  path: string,
+  ctrl: ReturnType<typeof createCrudController>,
+  options?: { listCacheMs?: number },
+) {
+  const listChain = options?.listCacheMs
+    ? [cacheGetResponse(options.listCacheMs), ctrl.list]
+    : [ctrl.list];
+  router.get(path, ...listChain);
   router.post(`${path}/seed`, ctrl.bulkSeed);
   router.get(`${path}/:id`, ctrl.getById);
   router.post(path, ctrl.create);
@@ -248,6 +260,7 @@ apiRouter.get('/', (_req, res) => {
       stockOut: '/api/v1/stock-out',
       stockTransfers: '/api/v1/stock-transfers',
       stockAdjustments: '/api/v1/stock-adjustments',
+      dashboardSummary: '/api/v1/dashboard/summary',
       ...Object.fromEntries(
         Object.entries(EXTENDED_API_ENDPOINTS).map(([k, v]) => [k, `/api/v1${v}`]),
       ),
@@ -257,8 +270,10 @@ apiRouter.get('/', (_req, res) => {
   });
 });
 
+apiRouter.get('/dashboard/summary', getDashboardSummary);
+
 registerCrud(apiRouter, '/customers', customerCtrl);
-registerCrud(apiRouter, '/products', productCtrl);
+registerCrud(apiRouter, '/products', productCtrl, { listCacheMs: DROPDOWN_CACHE_MS });
 registerCrud(apiRouter, '/suppliers', supplierCtrl);
 registerCrud(apiRouter, '/employees', employeeCtrl);
 registerCrud(apiRouter, '/sales-orders', salesOrderCtrl);
@@ -272,9 +287,9 @@ registerCrud(apiRouter, '/payments', paymentCtrl);
 registerCrud(apiRouter, '/returns', returnCtrl);
 registerCrud(apiRouter, '/complaints', complaintCtrl);
 registerCrud(apiRouter, '/pos-transactions', posCtrl);
-registerCrud(apiRouter, '/categories', categoryCtrl);
-registerCrud(apiRouter, '/units', unitCtrl);
-registerCrud(apiRouter, '/warehouses', warehouseCtrl);
+registerCrud(apiRouter, '/categories', categoryCtrl, { listCacheMs: DROPDOWN_CACHE_MS });
+registerCrud(apiRouter, '/units', unitCtrl, { listCacheMs: DROPDOWN_CACHE_MS });
+registerCrud(apiRouter, '/warehouses', warehouseCtrl, { listCacheMs: DROPDOWN_CACHE_MS });
 registerCrud(apiRouter, '/raw-materials', rawMaterialCtrl);
 registerCrud(apiRouter, '/semi-finished-products', semiFinishedCtrl);
 registerCrud(apiRouter, '/finished-goods', finishedGoodCtrl);

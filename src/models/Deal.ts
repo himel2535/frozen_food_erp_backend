@@ -30,6 +30,8 @@ const dealSchema = new Schema(
 
 dealSchema.index({ tenantId: 1, legacyId: 1 }, { unique: true, sparse: true });
 dealSchema.index({ tenantId: 1, title: 'text', company: 'text' });
+dealSchema.index({ tenantId: 1, status: 1, createdAt: -1 });
+dealSchema.index({ tenantId: 1, assignedRepId: 1, stage: 1 });
 
 export type DealDocument = InferSchemaType<typeof dealSchema> & { _id: mongoose.Types.ObjectId };
 

@@ -3,6 +3,7 @@ import type { Model, FilterQuery } from 'mongoose';
 import { notFound, badRequest } from '../utils/ApiError.js';
 import { sendSuccess, sendMessage } from '../utils/apiResponse.js';
 import { asyncHandler, parsePagination, paginationMeta } from '../utils/asyncHandler.js';
+import { listFieldsFor } from '../config/listFieldProfiles.js';
 
 type SearchFields = string[];
 
@@ -94,8 +95,14 @@ export function createCrudController<T extends Record<string, unknown>>(
       (filter as Record<string, unknown>).status = status;
     }
 
+    const listProjection = listFieldsFor(resourceName);
+    let query = model.find(filter).sort(defaultSort).skip(skip).limit(limit);
+    if (listProjection) {
+      query = query.select(listProjection);
+    }
+
     const [items, total] = await Promise.all([
-      model.find(filter).sort(defaultSort).skip(skip).limit(limit).lean(),
+      query.lean(),
       model.countDocuments(filter),
     ]);
 
