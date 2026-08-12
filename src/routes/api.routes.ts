@@ -35,9 +35,19 @@ import {
 } from '../models/index.js';
 import { registerExtendedRoutes, EXTENDED_API_ENDPOINTS } from './extendedRoutes.js';
 import { getDashboardSummary } from '../controllers/dashboardController.js';
+import {
+  getSalesReport,
+  getPurchaseReport,
+  getInventoryReport,
+  getCustomerReport,
+  getSupplierReport,
+  getFinancialReport,
+  getHrReport,
+} from '../controllers/reportsController.js';
 import { cacheGetResponse } from '../middleware/responseCache.js';
 
 const DROPDOWN_CACHE_MS = 5 * 60 * 1000;
+const REPORT_CACHE_MS = 60_000;
 
 function registerCrud(
   router: Router,
@@ -261,6 +271,15 @@ apiRouter.get('/', (_req, res) => {
       stockTransfers: '/api/v1/stock-transfers',
       stockAdjustments: '/api/v1/stock-adjustments',
       dashboardSummary: '/api/v1/dashboard/summary',
+      reports: {
+        sales: '/api/v1/reports/sales',
+        purchases: '/api/v1/reports/purchases',
+        inventory: '/api/v1/reports/inventory',
+        customers: '/api/v1/reports/customers',
+        suppliers: '/api/v1/reports/suppliers',
+        financial: '/api/v1/reports/financial',
+        hr: '/api/v1/reports/hr',
+      },
       ...Object.fromEntries(
         Object.entries(EXTENDED_API_ENDPOINTS).map(([k, v]) => [k, `/api/v1${v}`]),
       ),
@@ -271,6 +290,14 @@ apiRouter.get('/', (_req, res) => {
 });
 
 apiRouter.get('/dashboard/summary', cacheGetResponse(60_000), getDashboardSummary);
+
+apiRouter.get('/reports/sales', cacheGetResponse(REPORT_CACHE_MS), getSalesReport);
+apiRouter.get('/reports/purchases', cacheGetResponse(REPORT_CACHE_MS), getPurchaseReport);
+apiRouter.get('/reports/inventory', cacheGetResponse(REPORT_CACHE_MS), getInventoryReport);
+apiRouter.get('/reports/customers', cacheGetResponse(REPORT_CACHE_MS), getCustomerReport);
+apiRouter.get('/reports/suppliers', cacheGetResponse(REPORT_CACHE_MS), getSupplierReport);
+apiRouter.get('/reports/financial', cacheGetResponse(REPORT_CACHE_MS), getFinancialReport);
+apiRouter.get('/reports/hr', cacheGetResponse(REPORT_CACHE_MS), getHrReport);
 
 registerCrud(apiRouter, '/customers', customerCtrl);
 registerCrud(apiRouter, '/products', productCtrl, { listCacheMs: DROPDOWN_CACHE_MS });
