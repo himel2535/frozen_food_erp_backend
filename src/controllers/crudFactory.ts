@@ -4,6 +4,7 @@ import { notFound, badRequest } from '../utils/ApiError.js';
 import { sendSuccess, sendMessage } from '../utils/apiResponse.js';
 import { asyncHandler, parsePagination, paginationMeta } from '../utils/asyncHandler.js';
 import { listFieldsFor } from '../config/listFieldProfiles.js';
+import { clearResponseCache } from '../middleware/responseCache.js';
 
 type SearchFields = string[];
 
@@ -121,6 +122,7 @@ export function createCrudController<T extends Record<string, unknown>>(
 
   const create = asyncHandler(async (req: Request, res: Response) => {
     const doc = await createDocument(req.body as Record<string, unknown>);
+    clearResponseCache('/api/v1/dashboard/summary');
     sendSuccess(res, doc.toJSON(), undefined, 201);
   });
 
@@ -131,12 +133,14 @@ export function createCrudController<T extends Record<string, unknown>>(
       runValidators: true,
     }).lean();
     if (!doc) throw notFound(`${resourceName} not found`);
+    clearResponseCache('/api/v1/dashboard/summary');
     sendSuccess(res, doc);
   });
 
   const remove = asyncHandler(async (req: Request, res: Response) => {
     const doc = await model.findByIdAndDelete(req.params.id);
     if (!doc) throw notFound(`${resourceName} not found`);
+    clearResponseCache('/api/v1/dashboard/summary');
     sendMessage(res, `${resourceName} deleted`);
   });
 

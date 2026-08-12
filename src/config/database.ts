@@ -67,6 +67,9 @@ export async function connectDatabase(): Promise<void> {
     });
     global.__mongooseConnected = true;
     console.log(`[db] MongoDB connected${env.useMemoryDb ? '' : ` → ${sanitizeMongoUri(env.mongoUri)}`}`);
+
+    const { ensureDatabaseIndexes } = await import('./ensureIndexes.js');
+    await ensureDatabaseIndexes();
   } catch (err) {
     const message = String(err);
     const code = (err as { cause?: { code?: string } })?.cause?.code

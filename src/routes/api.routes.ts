@@ -270,7 +270,7 @@ apiRouter.get('/', (_req, res) => {
   });
 });
 
-apiRouter.get('/dashboard/summary', getDashboardSummary);
+apiRouter.get('/dashboard/summary', cacheGetResponse(60_000), getDashboardSummary);
 
 registerCrud(apiRouter, '/customers', customerCtrl);
 registerCrud(apiRouter, '/products', productCtrl, { listCacheMs: DROPDOWN_CACHE_MS });

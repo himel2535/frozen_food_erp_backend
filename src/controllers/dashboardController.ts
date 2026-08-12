@@ -35,7 +35,9 @@ export const getDashboardSummary = asyncHandler(async (req: Request, res: Respon
     customerDue,
     supplierDue,
     productionPending,
+    productionPendingQty,
     productionCompleted,
+    purchaseSummary,
     purchasePending,
     lowStockProducts,
     lowStockRm,
@@ -74,12 +76,30 @@ export const getDashboardSummary = asyncHandler(async (req: Request, res: Respon
     ]),
     PurchaseOrder.aggregate([
       { $match: filter },
-      { $group: { _id: null, totalDue: { $sum: { $ifNull: ['$due', { $ifNull: ['$balance', 0] }] } } } },
+      {
+        $group: {
+          _id: null,
+          totalDue: { $sum: { $ifNull: ['$due', { $ifNull: ['$balance', 0] }] } },
+          withDue: {
+            $sum: {
+              $cond: [{ $gt: [{ $ifNull: ['$due', { $ifNull: ['$balance', 0] }] }, 0] }, 1, 0],
+            },
+          },
+        },
+      },
     ]),
     ProductionOrder.countDocuments({ ...filter, status: { $in: ['Planned', 'In Progress'] } }),
     ProductionOrder.aggregate([
+      { $match: { ...filter, status: { $in: ['Planned', 'In Progress'] } } },
+      { $group: { _id: null, qty: { $sum: { $ifNull: ['$plannedQuantity', 0] } } } },
+    ]),
+    ProductionOrder.aggregate([
       { $match: { ...filter, status: 'Completed' } },
       { $group: { _id: null, count: { $sum: 1 }, qty: { $sum: { $ifNull: ['$actualQuantity', { $ifNull: ['$plannedQuantity', 0] }] } } } },
+    ]),
+    PurchaseOrder.aggregate([
+      { $match: filter },
+      { $group: { _id: null, count: { $sum: 1 }, total: { $sum: { $ifNull: ['$total', 0] } } } },
     ]),
     PurchaseOrder.countDocuments({ ...filter, status: { $in: ['Draft', 'Sent'] } }),
     Product.countDocuments({ ...filter, $expr: { $lte: ['$stock', { $ifNull: ['$reorderLevel', 0] }] } }),
@@ -110,9 +130,15 @@ export const getDashboardSummary = asyncHandler(async (req: Request, res: Respon
     customerDue: customerDue[0]?.totalDue ?? 0,
     customerDueCount: customerDue[0]?.withDue ?? 0,
     supplierDue: supplierDue[0]?.totalDue ?? 0,
+    supplierDueCount: supplierDue[0]?.withDue ?? 0,
     pendingProduction: productionPending,
+    pendingProductionQty: productionPendingQty[0]?.qty ?? 0,
     productionCompleted: productionCompleted[0]?.count ?? 0,
     productionQty: productionCompleted[0]?.qty ?? 0,
+    purchaseSummary: {
+      count: purchaseSummary[0]?.count ?? 0,
+      total: purchaseSummary[0]?.total ?? 0,
+    },
     pendingPurchase: purchasePending,
     lowStock: lowStockProducts + lowStockRm + lowStockSf + lowStockFg,
     rmStockValue: rmVal,
