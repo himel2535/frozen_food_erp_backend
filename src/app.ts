@@ -6,6 +6,8 @@ import compression from 'compression';
 import { env } from './config/env.js';
 import { optionalApiKey } from './middleware/optionalApiKey.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
+import { requireAuth } from './middleware/requireAuth.js';
+import { authRouter } from './routes/auth.routes.js';
 import { healthRouter } from './routes/health.routes.js';
 import { apiRouter } from './routes/api.routes.js';
 
@@ -38,7 +40,8 @@ export function createApp() {
   });
 
   app.use('/health', healthRouter);
-  app.use('/api/v1', optionalApiKey, apiRouter);
+  app.use('/api/v1/auth', authRouter);
+  app.use('/api/v1', requireAuth, apiRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
