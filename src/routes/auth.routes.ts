@@ -92,7 +92,7 @@ authRouter.post('/login', async (req, res, next) => {
 });
 
 // POST /api/v1/auth/logout
-authRouter.post('/logout', (req, res) => {
+authRouter.post('/logout', (_req, res) => {
   res.clearCookie('token');
   res.json({ success: true });
 });
