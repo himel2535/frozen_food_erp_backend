@@ -59,12 +59,21 @@ authRouter.post('/login', async (req, res, next) => {
 
     const secret = process.env.JWT_SECRET || 'fallback-secret-for-dev';
     const token = jwt.sign(
-      { userId: user._id },
+      { userId: user._id.toString(), role: user.role, tenantId: user.tenantId },
       secret,
       { expiresIn: '7d' }
     );
 
+    // Set HttpOnly cookie
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
+
     res.json({
+      success: true,
       token,
       user: {
         uid: user._id.toString(),
@@ -80,6 +89,12 @@ authRouter.post('/login', async (req, res, next) => {
   } catch (err) {
     next(err);
   }
+});
+
+// POST /api/v1/auth/logout
+authRouter.post('/logout', (req, res) => {
+  res.clearCookie('token');
+  res.json({ success: true });
 });
 
 // GET /api/v1/auth/me

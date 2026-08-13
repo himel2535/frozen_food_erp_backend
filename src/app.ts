@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import compression from 'compression';
+import cookieParser from 'cookie-parser';
 import { env } from './config/env.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import { requireAuth } from './middleware/requireAuth.js';
@@ -17,6 +18,7 @@ export function createApp() {
   app.disable('x-powered-by');
   app.use(helmet());
   app.use(compression());
+  app.use(cookieParser());
   app.use(
     cors({
       origin: env.corsOrigin.split(',').map((o) => o.trim()),

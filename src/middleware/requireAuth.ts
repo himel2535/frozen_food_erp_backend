@@ -5,12 +5,19 @@ import { User } from '../models/User.js';
 
 export async function requireAuth(req: Request, _res: Response, next: NextFunction) {
   try {
-    const authHeader = req.header('authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return next(new ApiError(401, 'Unauthorized: Missing or invalid token format'));
+    let token = req.cookies?.token;
+    
+    if (!token) {
+      const authHeader = req.header('authorization');
+      if (authHeader?.startsWith('Bearer ')) {
+        token = authHeader.substring(7);
+      }
     }
 
-    const token = authHeader.substring(7);
+    if (!token) {
+      return next(new ApiError(401, 'Unauthorized: Missing or invalid token'));
+    }
+
     const secret = process.env.JWT_SECRET || 'fallback-secret-for-dev';
 
     const decoded = jwt.verify(token, secret) as { userId: string };
