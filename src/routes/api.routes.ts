@@ -52,7 +52,6 @@ import {
 import { getSalarySheetSummary } from '../controllers/payrollController.js';
 import { cacheGetResponse } from '../middleware/responseCache.js';
 
-const DROPDOWN_CACHE_MS = 5 * 60 * 1000;
 const REPORT_CACHE_MS = 60_000;
 
 function registerCrud(
@@ -74,26 +73,33 @@ function registerCrud(
 }
 
 const customerCtrl = createCrudController(Customer, {
+  useTextSearch: true,
+  listCachePrefix: '/api/v1/customers',
   resourceName: 'Customer',
   searchFields: ['legacyId', 'name', 'company', 'email', 'phone'],
   legacyIdPrefix: 'CUST',
 });
 
 const productCtrl = createCrudController(Product, {
+  useTextSearch: true,
+  listCachePrefix: '/api/v1/products',
   resourceName: 'Product',
   searchFields: ['legacyId', 'name', 'sku', 'category'],
   legacyIdPrefix: 'PROD',
   autoFields: { sku: 'SKU' },
-  listCachePrefix: '/api/v1/products',
 });
 
 const supplierCtrl = createCrudController(Supplier, {
+  useTextSearch: true,
+  listCachePrefix: '/api/v1/suppliers',
   resourceName: 'Supplier',
   searchFields: ['legacyId', 'name', 'code', 'email', 'phone'],
   legacyIdPrefix: 'SUP',
 });
 
 const employeeCtrl = createCrudController(Employee, {
+  useTextSearch: true,
+  listCachePrefix: '/api/v1/employees',
   resourceName: 'Employee',
   searchFields: ['legacyId', 'name', 'employeeCode', 'department', 'email'],
   legacyIdPrefix: 'EMP',
@@ -101,6 +107,7 @@ const employeeCtrl = createCrudController(Employee, {
 });
 
 const salesOrderCtrl = createCrudController(SalesOrder, {
+  listCachePrefix: '/api/v1/sales-orders',
   resourceName: 'Sales order',
   searchFields: ['legacyId', 'customer', 'customerName'],
   defaultSort: { createdAt: -1 },
@@ -108,6 +115,7 @@ const salesOrderCtrl = createCrudController(SalesOrder, {
 });
 
 const invoiceCtrl = createCrudController(Invoice, {
+  listCachePrefix: '/api/v1/invoices',
   resourceName: 'Invoice',
   searchFields: ['legacyId', 'customerName'],
   defaultSort: { createdAt: -1 },
@@ -115,6 +123,8 @@ const invoiceCtrl = createCrudController(Invoice, {
 });
 
 const leadCtrl = createCrudController(Lead, {
+  useTextSearch: true,
+  listCachePrefix: '/api/v1/leads',
   resourceName: 'Lead',
   searchFields: ['legacyId', 'name', 'company', 'email', 'phone'],
   defaultSort: { createdAt: -1 },
@@ -122,6 +132,8 @@ const leadCtrl = createCrudController(Lead, {
 });
 
 const dealCtrl = createCrudController(Deal, {
+  useTextSearch: true,
+  listCachePrefix: '/api/v1/deals',
   resourceName: 'Deal',
   searchFields: ['legacyId', 'title', 'company'],
   defaultSort: { createdAt: -1 },
@@ -129,6 +141,7 @@ const dealCtrl = createCrudController(Deal, {
 });
 
 const quotationCtrl = createCrudController(Quotation, {
+  listCachePrefix: '/api/v1/quotations',
   resourceName: 'Quotation',
   searchFields: ['legacyId', 'customer', 'customerName'],
   defaultSort: { createdAt: -1 },
@@ -136,6 +149,7 @@ const quotationCtrl = createCrudController(Quotation, {
 });
 
 const deliveryCtrl = createCrudController(Delivery, {
+  listCachePrefix: '/api/v1/deliveries',
   resourceName: 'Delivery',
   searchFields: ['legacyId', 'customer', 'customerName', 'orderId'],
   defaultSort: { createdAt: -1 },
@@ -143,6 +157,7 @@ const deliveryCtrl = createCrudController(Delivery, {
 });
 
 const dispatchCtrl = createCrudController(Dispatch, {
+  listCachePrefix: '/api/v1/dispatch',
   resourceName: 'Dispatch',
   searchFields: ['legacyId', 'route', 'vehicle'],
   defaultSort: { createdAt: -1 },
@@ -150,6 +165,7 @@ const dispatchCtrl = createCrudController(Dispatch, {
 });
 
 const paymentCtrl = createCrudController(Payment, {
+  listCachePrefix: '/api/v1/payments',
   resourceName: 'Payment',
   searchFields: ['legacyId', 'customer', 'customerName'],
   defaultSort: { createdAt: -1 },
@@ -157,6 +173,7 @@ const paymentCtrl = createCrudController(Payment, {
 });
 
 const returnCtrl = createCrudController(SalesReturn, {
+  listCachePrefix: '/api/v1/returns',
   resourceName: 'Return',
   searchFields: ['legacyId', 'customer', 'customerName', 'invoiceId'],
   defaultSort: { createdAt: -1 },
@@ -164,6 +181,8 @@ const returnCtrl = createCrudController(SalesReturn, {
 });
 
 const complaintCtrl = createCrudController(Complaint, {
+  useTextSearch: true,
+  listCachePrefix: '/api/v1/complaints',
   resourceName: 'Complaint',
   searchFields: ['legacyId', 'subject', 'customerName', 'ticketNo'],
   defaultSort: { createdAt: -1 },
@@ -172,6 +191,7 @@ const complaintCtrl = createCrudController(Complaint, {
 });
 
 const posCtrl = createCrudController(PosTransaction, {
+  listCachePrefix: '/api/v1/pos-transactions',
   resourceName: 'POS transaction',
   searchFields: ['legacyId', 'receiptNo', 'customerName'],
   defaultSort: { createdAt: -1 },
@@ -180,47 +200,54 @@ const posCtrl = createCrudController(PosTransaction, {
 });
 
 const categoryCtrl = createCrudController(Category, {
+  listCachePrefix: '/api/v1/categories',
   resourceName: 'Category',
   searchFields: ['legacyId', 'name', 'code', 'type'],
   legacyIdPrefix: 'CAT',
   autoFields: { code: 'CAT' },
-  listCachePrefix: '/api/v1/categories',
 });
 
 const unitCtrl = createCrudController(Unit, {
+  listCachePrefix: '/api/v1/units',
   resourceName: 'Unit',
   searchFields: ['legacyId', 'name', 'code', 'symbol'],
   legacyIdPrefix: 'UOM',
   autoFields: { code: 'UOM' },
-  listCachePrefix: '/api/v1/units',
 });
 
 const warehouseCtrl = createCrudController(Warehouse, {
+  listCachePrefix: '/api/v1/warehouses',
   resourceName: 'Warehouse',
   searchFields: ['legacyId', 'name', 'location', 'manager'],
   legacyIdPrefix: 'WH',
-  listCachePrefix: '/api/v1/warehouses',
 });
 
 const rawMaterialCtrl = createCrudController(RawMaterial, {
+  useTextSearch: true,
+  listCachePrefix: '/api/v1/raw-materials',
   resourceName: 'Raw material',
   searchFields: ['legacyId', 'name', 'category'],
   legacyIdPrefix: 'RM',
 });
 
 const semiFinishedCtrl = createCrudController(SemiFinishedProduct, {
+  useTextSearch: true,
+  listCachePrefix: '/api/v1/semi-finished-products',
   resourceName: 'Semi-finished product',
   searchFields: ['legacyId', 'name', 'category'],
   legacyIdPrefix: 'SF',
 });
 
 const finishedGoodCtrl = createCrudController(FinishedGood, {
+  useTextSearch: true,
+  listCachePrefix: '/api/v1/finished-goods',
   resourceName: 'Finished good',
   searchFields: ['legacyId', 'name', 'category'],
   legacyIdPrefix: 'FG',
 });
 
 const stockInCtrl = createCrudController(StockIn, {
+  listCachePrefix: '/api/v1/stock-in',
   resourceName: 'Stock in',
   searchFields: ['legacyId', 'product', 'refDocId', 'supplier'],
   defaultSort: { createdAt: -1 },
@@ -228,6 +255,7 @@ const stockInCtrl = createCrudController(StockIn, {
 });
 
 const stockOutCtrl = createCrudController(StockOut, {
+  listCachePrefix: '/api/v1/stock-out',
   resourceName: 'Stock out',
   searchFields: ['legacyId', 'product', 'refDocId'],
   defaultSort: { createdAt: -1 },
@@ -235,6 +263,7 @@ const stockOutCtrl = createCrudController(StockOut, {
 });
 
 const stockTransferCtrl = createCrudController(StockTransfer, {
+  listCachePrefix: '/api/v1/stock-transfers',
   resourceName: 'Stock transfer',
   searchFields: ['legacyId', 'product'],
   defaultSort: { createdAt: -1 },
@@ -242,6 +271,7 @@ const stockTransferCtrl = createCrudController(StockTransfer, {
 });
 
 const stockAdjustmentCtrl = createCrudController(StockAdjustment, {
+  listCachePrefix: '/api/v1/stock-adjustments',
   resourceName: 'Stock adjustment',
   searchFields: ['legacyId', 'product', 'reason'],
   defaultSort: { createdAt: -1 },
@@ -314,31 +344,31 @@ apiRouter.get('/reports/suppliers', cacheGetResponse(REPORT_CACHE_MS), getSuppli
 apiRouter.get('/reports/financial', cacheGetResponse(REPORT_CACHE_MS), getFinancialReport);
 apiRouter.get('/reports/hr', cacheGetResponse(REPORT_CACHE_MS), getHrReport);
 
-registerCrud(apiRouter, '/customers', customerCtrl);
-registerCrud(apiRouter, '/products', productCtrl, { listCacheMs: DROPDOWN_CACHE_MS });
-registerCrud(apiRouter, '/suppliers', supplierCtrl);
-registerCrud(apiRouter, '/employees', employeeCtrl);
-registerCrud(apiRouter, '/sales-orders', salesOrderCtrl);
-registerCrud(apiRouter, '/invoices', invoiceCtrl);
-registerCrud(apiRouter, '/leads', leadCtrl);
-registerCrud(apiRouter, '/deals', dealCtrl);
-registerCrud(apiRouter, '/quotations', quotationCtrl);
-registerCrud(apiRouter, '/deliveries', deliveryCtrl);
-registerCrud(apiRouter, '/dispatch', dispatchCtrl);
-registerCrud(apiRouter, '/payments', paymentCtrl);
-registerCrud(apiRouter, '/returns', returnCtrl);
-registerCrud(apiRouter, '/complaints', complaintCtrl);
-registerCrud(apiRouter, '/pos-transactions', posCtrl);
-registerCrud(apiRouter, '/categories', categoryCtrl, { listCacheMs: DROPDOWN_CACHE_MS });
-registerCrud(apiRouter, '/units', unitCtrl, { listCacheMs: DROPDOWN_CACHE_MS });
-registerCrud(apiRouter, '/warehouses', warehouseCtrl, { listCacheMs: DROPDOWN_CACHE_MS });
-registerCrud(apiRouter, '/raw-materials', rawMaterialCtrl);
-registerCrud(apiRouter, '/semi-finished-products', semiFinishedCtrl);
-registerCrud(apiRouter, '/finished-goods', finishedGoodCtrl);
-registerCrud(apiRouter, '/stock-in', stockInCtrl);
-registerCrud(apiRouter, '/stock-out', stockOutCtrl);
-registerCrud(apiRouter, '/stock-transfers', stockTransferCtrl);
-registerCrud(apiRouter, '/stock-adjustments', stockAdjustmentCtrl);
+registerCrud(apiRouter, '/customers', customerCtrl, { listCacheMs: 30000 });
+registerCrud(apiRouter, '/products', productCtrl, { listCacheMs: 30000 });
+registerCrud(apiRouter, '/suppliers', supplierCtrl, { listCacheMs: 30000 });
+registerCrud(apiRouter, '/employees', employeeCtrl, { listCacheMs: 30000 });
+registerCrud(apiRouter, '/sales-orders', salesOrderCtrl, { listCacheMs: 30000 });
+registerCrud(apiRouter, '/invoices', invoiceCtrl, { listCacheMs: 30000 });
+registerCrud(apiRouter, '/leads', leadCtrl, { listCacheMs: 30000 });
+registerCrud(apiRouter, '/deals', dealCtrl, { listCacheMs: 30000 });
+registerCrud(apiRouter, '/quotations', quotationCtrl, { listCacheMs: 30000 });
+registerCrud(apiRouter, '/deliveries', deliveryCtrl, { listCacheMs: 30000 });
+registerCrud(apiRouter, '/dispatch', dispatchCtrl, { listCacheMs: 30000 });
+registerCrud(apiRouter, '/payments', paymentCtrl, { listCacheMs: 30000 });
+registerCrud(apiRouter, '/returns', returnCtrl, { listCacheMs: 30000 });
+registerCrud(apiRouter, '/complaints', complaintCtrl, { listCacheMs: 30000 });
+registerCrud(apiRouter, '/pos-transactions', posCtrl, { listCacheMs: 30000 });
+registerCrud(apiRouter, '/categories', categoryCtrl, { listCacheMs: 30000 });
+registerCrud(apiRouter, '/units', unitCtrl, { listCacheMs: 30000 });
+registerCrud(apiRouter, '/warehouses', warehouseCtrl, { listCacheMs: 30000 });
+registerCrud(apiRouter, '/raw-materials', rawMaterialCtrl, { listCacheMs: 30000 });
+registerCrud(apiRouter, '/semi-finished-products', semiFinishedCtrl, { listCacheMs: 30000 });
+registerCrud(apiRouter, '/finished-goods', finishedGoodCtrl, { listCacheMs: 30000 });
+registerCrud(apiRouter, '/stock-in', stockInCtrl, { listCacheMs: 30000 });
+registerCrud(apiRouter, '/stock-out', stockOutCtrl, { listCacheMs: 30000 });
+registerCrud(apiRouter, '/stock-transfers', stockTransferCtrl, { listCacheMs: 30000 });
+registerCrud(apiRouter, '/stock-adjustments', stockAdjustmentCtrl, { listCacheMs: 30000 });
 
 apiRouter.post('/stock-in/:id/approve', approveStockIn);
 apiRouter.post('/stock-out/:id/complete', completeStockOut);

@@ -35,6 +35,8 @@ export function createCrudController<T extends Record<string, unknown>>(
     autoFields?: Record<string, string>;
     /** Clear GET list cache for this path prefix after mutations (e.g. /api/v1/products). */
     listCachePrefix?: string;
+    /** Whether to use MongoDB native $text search (if indexes exist) instead of $regex */
+    useTextSearch?: boolean;
   },
 ) {
   const {
@@ -44,6 +46,7 @@ export function createCrudController<T extends Record<string, unknown>>(
     legacyIdPrefix,
     autoFields = {},
     listCachePrefix,
+    useTextSearch = false,
   } = options;
 
   function clearCaches() {
@@ -95,9 +98,13 @@ export function createCrudController<T extends Record<string, unknown>>(
     const tenantId = String(req.query.tenantId ?? 'default');
     const filter: FilterQuery<T> = { tenantId } as FilterQuery<T>;
 
-    if (search && searchFields.length) {
-      const regex = new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-      filter.$or = searchFields.map((field) => ({ [field]: regex })) as FilterQuery<T>['$or'];
+    if (search) {
+      if (useTextSearch) {
+        (filter as Record<string, unknown>).$text = { $search: search };
+      } else if (searchFields.length) {
+        const regex = new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+        filter.$or = searchFields.map((field) => ({ [field]: regex })) as FilterQuery<T>['$or'];
+      }
     }
 
     const status = req.query.status;
