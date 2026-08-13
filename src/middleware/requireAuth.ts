@@ -1,10 +1,9 @@
 import type { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { env } from '../config/env.js';
 import { ApiError } from '../utils/ApiError.js';
 import { User } from '../models/User.js';
 
-export async function requireAuth(req: Request, res: Response, next: NextFunction) {
+export async function requireAuth(req: Request, _res: Response, next: NextFunction) {
   try {
     const authHeader = req.header('authorization');
     if (!authHeader?.startsWith('Bearer ')) {
@@ -17,7 +16,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     const decoded = jwt.verify(token, secret) as { userId: string };
     
     const user = await User.findById(decoded.userId).lean();
-    if (!user || user.status === 'disabled') {
+    if (!user || (user as any).status === 'disabled') {
       return next(new ApiError(401, 'Unauthorized: User not found or disabled'));
     }
 
