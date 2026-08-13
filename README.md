@@ -1,130 +1,63 @@
-# Toys Factory ERP — Backend
+# 🏭 Toys Factory ERP (Backend API)
 
-Standalone **Express.js + Mongoose** API for the Toys Factory ERP frontend.
+🚀 **Live API Base URL:** [https://api.toysfactoryerp.com](https://api.toysfactoryerp.com) *(Update with actual live URL)*  
+💻 **GitHub Repository:** [https://github.com/himel2535/toys_factory_erp_backend](https://github.com/himel2535/toys_factory_erp_backend)
 
-> **Important:** This folder lives **outside** `toys_factory_erp/`.  
-> The frontend still uses **Firebase RTDB + Zustand** today. This backend is ready for when you choose to connect it — zero conflict with the current app.
+A robust, secure, and highly optimized RESTful API backend powering the Toys Factory ERP system.
 
-## Stack
+---
 
-- Node.js 20+
-- Express 5
-- Mongoose 8 (MongoDB)
-- TypeScript
+## 🛠️ Tech Stack
+- **Runtime:** Node.js
+- **Framework:** Express.js
+- **Database:** MongoDB (with Mongoose ODM)
+- **Language:** TypeScript
+- **Authentication:** JWT (JSON Web Tokens) via HTTP-Only Cookies
+- **Validation:** Zod (for type-safe schema validation)
 
-## Quick start
+---
 
-### 1. Install MongoDB locally (if needed)
+## ⚡ Performance & Security Optimizations
+This API is engineered to handle enterprise-level data processing with extreme efficiency:
+- **Compound Database Indexes:** Optimized database queries with 128+ custom compound and unique indexes in MongoDB for lightning-fast lookups and sorting.
+- **Stateless Authentication:** Uses JWT inside secure HTTP-only cookies, effectively mitigating XSS attacks and removing the need for heavy server-side session lookups on every request.
+- **Pagination & Limiting:** Prevents data overload and reduces bandwidth by strictly serving chunked, paginated responses (e.g., 25/200 items per page) instead of massive arrays.
+- **Lean Mongoose Queries:** Strategically utilizes Mongoose `.lean()` for read-only operations to bypass heavy document instantiation overhead, improving read response times.
+- **Connection Pooling:** Reuses MongoDB connections efficiently to support high concurrency without dropping requests.
+- **Strict CORS Policies:** Ensures API endpoints are only accessible from authorized frontend origins.
 
-- Windows: [MongoDB Community Server](https://www.mongodb.com/try/download/community)
-- Or use [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) free tier and set `MONGODB_URI`
+---
 
-### 2. Install dependencies
+## 📦 Core Architecture & Modules
 
-```bash
-cd toys_factory_erp_backend
-npm install
-```
+### 🔐 1. Authentication & Security
+- Secure login, registration, and logout flows.
+- Cookie-based session management.
+- Middleware-driven Role-Based Access Control (RBAC) ensuring endpoints are protected based on user permissions.
 
-### 3. Environment
+### 📡 2. RESTful API Design
+- Clean, predictable, and standard versioned API routes (`/api/v1/...`).
+- Standardized JSON responses for successes and unified error handling middleware for failures.
 
-```bash
-copy .env.example .env
-```
+### 📊 3. Advanced Data Aggregation
+- Heavy utilization of complex MongoDB Aggregation pipelines (`$lookup`, `$group`, `$unwind`) for real-time calculation of Dashboard analytics, Accounting Ledgers, and Inventory Valuation Reports.
 
-Edit `.env` if your MongoDB URL or frontend port differs.
+### 🏭 4. Core Business Logic Routes
+- **Inventory & Manufacturing:** Endpoints for BOM (Recipes), stock adjustments, warehouse tracking, and production workflows.
+- **Sales & CRM:** Manage leads, customers, POS transactions, and invoices.
+- **Purchases & Payables:** Supplier management, purchase orders, and goods receipts.
+- **Accounting:** Double-entry ledger systems, cashbox monitoring, and financial reports.
+- **HR & Payroll:** Employee records, attendance logs, and automated salary sheet generation.
 
-### 4. Run (development)
+### 📝 5. System Audit Logs
+- Centralized logging system to track all critical document mutations (Create, Update, Delete) for accountability and compliance.
 
-```bash
-npm run dev
-```
+---
 
-Server: `http://localhost:5000`
+## 💻 Running Locally
 
-### 5. Verify
-
-```bash
-curl http://localhost:5000/health
-curl http://localhost:5000/api/v1/customers
-```
-
-## API overview
-
-Base URL: `http://localhost:5000/api/v1`
-
-| Resource | Endpoints |
-|----------|-----------|
-| Customers | `GET/POST /customers`, `GET/PUT/PATCH/DELETE /customers/:id` |
-| Products | `GET/POST /products`, … |
-| Suppliers | `GET/POST /suppliers`, … |
-| Employees | `GET/POST /employees`, … |
-| Sales orders | `GET/POST /sales-orders`, … |
-| Invoices | `GET/POST /invoices`, … |
-
-### Query params (lists)
-
-- `page` — default 1
-- `limit` — default 20, max 100
-- `search` or `q` — text search
-- `status` — filter by status
-- `tenantId` — default `default` (multi-tenant ready)
-
-### Bulk seed (optional)
-
-```http
-POST /api/v1/customers/seed
-Content-Type: application/json
-
-[{ "name": "Test Co", "company": "Test Co Ltd", "status": "active" }]
-```
-
-## Response shape
-
-```json
-{
-  "success": true,
-  "data": [],
-  "meta": { "total": 0, "page": 1, "limit": 20, "totalPages": 1 }
-}
-```
-
-## Connect to frontend (later)
-
-When you are ready:
-
-1. Add `NEXT_PUBLIC_API_URL=http://localhost:5000/api/v1` to `web/.env.local`
-2. Create a thin client in `web/lib/api/` that calls these endpoints
-3. Gradually move modules from Firebase `appState` to API — module by module
-
-Firebase auth/admin can stay until you migrate auth.
-
-## Scripts
-
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Dev server with hot reload (`tsx watch`) |
-| `npm run build` | Compile TypeScript → `dist/` |
-| `npm start` | Run compiled production build |
-| `npm run lint` | Typecheck |
-
-## Project structure
-
-```
-toys_factory_erp_backend/
-├── src/
-│   ├── server.ts          # Entry point
-│   ├── app.ts             # Express app
-│   ├── config/            # env + MongoDB
-│   ├── models/            # Mongoose schemas
-│   ├── controllers/       # CRUD handlers
-│   ├── routes/            # Route definitions
-│   ├── middleware/        # Errors, optional API key
-│   └── utils/
-├── .env.example
-└── package.json
-```
-
-## Security (optional)
-
-Set `API_KEY` in `.env` and send header `x-api-key: your-key` on requests. Leave empty in dev to skip auth.
+1. Clone the repository
+2. Install dependencies: `npm install`
+3. Setup environment variables by copying `.env.example` to `.env` (Provide your MongoDB URI)
+4. Build the TypeScript code: `npm run build`
+5. Start the development server: `npm run dev`
