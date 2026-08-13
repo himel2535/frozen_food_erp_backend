@@ -35,7 +35,6 @@ export const LIST_FIELD_PROFILES: Record<string, string> = {
   'Payroll run': 'legacyId tenantId period status totalEmployees totalAmount createdAt updatedAt',
   'Salary structure': 'legacyId tenantId name code employeeType status payFrequency effectiveFrom description base totalFixed allowances components assignedEmployeeIds overtimeEnabled otRate holidayOtRate weeklyOffOtRate bonusEnabled bonusPercent workingDays createdAt updatedAt',
   Asset: 'legacyId tenantId name category status value purchaseDate createdAt updatedAt',
-  Recipe: 'legacyId tenantId name status product createdAt updatedAt',
   'Goods received': 'legacyId tenantId supplier status total date createdAt updatedAt',
   'Purchase bill': 'legacyId tenantId supplier status total due date createdAt updatedAt',
   'Purchase payment': 'legacyId tenantId supplier status amount date createdAt updatedAt',
