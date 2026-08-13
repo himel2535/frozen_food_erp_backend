@@ -56,7 +56,7 @@ export async function connectDatabase(): Promise<void> {
   }
 
   try {
-    if (!env.useMemoryDb && uri.startsWith('mongodb+srv://')) {
+    if (!env.useMemoryDb && !env.isProd && uri.startsWith('mongodb+srv://')) {
       uri = await resolveMongoUri(uri);
       console.log(`[db] Resolved Atlas SRV → ${sanitizeMongoUri(uri)}`);
     }
