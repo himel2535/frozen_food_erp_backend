@@ -62,22 +62,29 @@ export function createCrudController<T extends Record<string, unknown>>(
     }
 
     if (forCreate) {
+      const clientLegacyId = payload.legacyId ?? body.id ?? body.legacyId;
       delete payload.id;
       delete payload._id;
       delete payload._mongoId;
-      delete payload.legacyId;
-      if (legacyIdPrefix) {
+      if (!isEmpty(clientLegacyId)) {
+        payload.legacyId = String(clientLegacyId).trim();
+      } else if (legacyIdPrefix) {
         payload.legacyId = generateUniqueId(legacyIdPrefix);
+      } else {
+        delete payload.legacyId;
       }
       for (const [field, prefix] of Object.entries(autoFields)) {
         if (isEmpty(payload[field])) {
           payload[field] = generateUniqueId(prefix);
         }
       }
-    } else if (!isEmpty(payload.legacyId)) {
-      payload.legacyId = String(payload.legacyId).trim();
     } else {
-      delete payload.legacyId;
+      const clientLegacyId = payload.legacyId ?? body.id ?? body.legacyId;
+      if (!isEmpty(clientLegacyId)) {
+        payload.legacyId = String(clientLegacyId).trim();
+      } else {
+        delete payload.legacyId;
+      }
     }
 
     return payload;
