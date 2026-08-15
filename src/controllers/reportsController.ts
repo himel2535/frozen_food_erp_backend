@@ -105,6 +105,58 @@ export const getSalesReport = asyncHandler(async (req: Request, res: Response) =
   sendSuccess(res, { rows }, { total: rows.length });
 });
 
+function mapProductSaleLine(
+  invoice: Record<string, unknown>,
+  item: Record<string, unknown>,
+  index: number,
+) {
+  const qty = Number(item.qty ?? item.quantity ?? 0);
+  const unitPrice = Number(item.price ?? item.rate ?? 0);
+  const revenue = Number(item.total ?? item.amount ?? qty * unitPrice);
+  const productName = String(item.name ?? item.description ?? item.productName ?? '').trim() || 'Unnamed product';
+  const sku = String(item.sku ?? '').trim();
+  const productId = String(item.productId ?? sku ?? productName);
+  return {
+    id: `${invoice.legacyId ?? invoice.id}-${index}`,
+    date: String(invoice.issueDate ?? invoice.date ?? invoice.createdAt ?? '').slice(0, 10),
+    invoiceRef: invoice.legacyId ?? invoice.id,
+    productId,
+    productName,
+    sku,
+    qty,
+    unitPrice,
+    revenue,
+    customer: invoice.customerName ?? invoice.customer ?? '',
+  };
+}
+
+export const getProductSalesReport = asyncHandler(async (req: Request, res: Response) => {
+  const filter = {
+    ...tenantFilter(String(req.query.tenantId ?? 'default')),
+    status: { $nin: ['cancelled', 'draft'] },
+  };
+
+  const invoices = await Invoice.find(filter)
+    .select('legacyId customerName customer issueDate date status items amount createdAt')
+    .sort({ createdAt: -1 })
+    .limit(500)
+    .lean();
+
+  const rows: Record<string, unknown>[] = [];
+  invoices.forEach((doc) => {
+    const invoice = serializeDoc(doc as Record<string, unknown>);
+    const items = Array.isArray(invoice.items) ? invoice.items : [];
+    items.forEach((raw, index) => {
+      if (!raw || typeof raw !== 'object') return;
+      const line = mapProductSaleLine(invoice, raw as Record<string, unknown>, index);
+      if (line.qty === 0 && line.revenue === 0) return;
+      rows.push(line);
+    });
+  });
+
+  sendSuccess(res, { rows }, { total: rows.length });
+});
+
 export const getPurchaseReport = asyncHandler(async (req: Request, res: Response) => {
   const filter = tenantFilter(String(req.query.tenantId ?? 'default'));
   const proj = selectFields('Purchase order');

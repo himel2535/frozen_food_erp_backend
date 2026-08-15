@@ -37,6 +37,7 @@ import { registerExtendedRoutes, EXTENDED_API_ENDPOINTS } from './extendedRoutes
 import { getDashboardSummary } from '../controllers/dashboardController.js';
 import {
   getSalesReport,
+  getProductSalesReport,
   getPurchaseReport,
   getInventoryReport,
   getCustomerReport,
@@ -316,6 +317,7 @@ apiRouter.get('/', (_req, res) => {
       dashboardSummary: '/api/v1/dashboard/summary',
       reports: {
         sales: '/api/v1/reports/sales',
+        productSales: '/api/v1/reports/product-sales',
         purchases: '/api/v1/reports/purchases',
         inventory: '/api/v1/reports/inventory',
         customers: '/api/v1/reports/customers',
@@ -340,6 +342,7 @@ apiRouter.get('/trial-balance/summary', cacheGetResponse(REPORT_CACHE_MS), getTr
 apiRouter.get('/salary-sheet/summary', cacheGetResponse(REPORT_CACHE_MS), getSalarySheetSummary);
 
 apiRouter.get('/reports/sales', cacheGetResponse(REPORT_CACHE_MS), getSalesReport);
+apiRouter.get('/reports/product-sales', cacheGetResponse(REPORT_CACHE_MS), getProductSalesReport);
 apiRouter.get('/reports/purchases', cacheGetResponse(REPORT_CACHE_MS), getPurchaseReport);
 apiRouter.get('/reports/inventory', cacheGetResponse(REPORT_CACHE_MS), getInventoryReport);
 apiRouter.get('/reports/customers', cacheGetResponse(REPORT_CACHE_MS), getCustomerReport);
