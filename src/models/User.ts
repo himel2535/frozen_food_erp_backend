@@ -32,6 +32,7 @@ const userSchema = new Schema(
     },
     imageUrl: String,
     allowedSections: [String],
+    allowedPermissions: [String],
   },
   timestampsConfig,
 );

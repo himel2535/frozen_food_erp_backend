@@ -29,6 +29,7 @@ adminRouter.get('/users', async (_req, res, next) => {
       isMainAdmin: u.role === 'admin',
       status: u.status,
       allowedSections: u.allowedSections || [],
+      allowedPermissions: (u as { allowedPermissions?: string[] }).allowedPermissions || [],
       createdAt: (u as any).createdAt,
     }));
     
@@ -41,7 +42,7 @@ adminRouter.get('/users', async (_req, res, next) => {
 // POST /api/v1/admin/users
 adminRouter.post('/users', async (req, res, next) => {
   try {
-    const { name, email, password, imageUrl, allowedSections, isMainAdmin } = req.body;
+    const { name, email, password, imageUrl, allowedSections, allowedPermissions, isMainAdmin } = req.body;
     
     if (!name || !email || !password) {
       throw new ApiError(400, 'Name, email, and password are required');
@@ -59,6 +60,7 @@ adminRouter.post('/users', async (req, res, next) => {
       imageUrl: imageUrl || undefined,
       role: isMainAdmin ? 'admin' : 'user',
       allowedSections: isMainAdmin ? ['*'] : allowedSections || [],
+      allowedPermissions: isMainAdmin ? [] : (Array.isArray(allowedPermissions) ? allowedPermissions : []),
       status: 'active'
     });
     
@@ -74,6 +76,7 @@ adminRouter.post('/users', async (req, res, next) => {
         isMainAdmin: user.role === 'admin',
         status: user.status,
         allowedSections: user.allowedSections,
+        allowedPermissions: (user as { allowedPermissions?: string[] }).allowedPermissions || [],
         createdAt: (user as any).createdAt,
       }
     });
@@ -96,7 +99,7 @@ adminRouter.put('/users/:id', async (req, res, next) => {
     }
     
     const adminUid = (req as any).user._id.toString();
-    const { name, imageUrl, allowedSections, status, password, isMainAdmin } = req.body;
+    const { name, imageUrl, allowedSections, allowedPermissions, status, password, isMainAdmin } = req.body;
     
     if (status === 'disabled' && id === adminUid) {
       throw new ApiError(400, 'You cannot disable your own account');
@@ -112,8 +115,16 @@ adminRouter.put('/users/:id', async (req, res, next) => {
     if (typeof isMainAdmin === 'boolean') {
       user.role = isMainAdmin ? 'admin' : 'user';
       user.allowedSections = isMainAdmin ? ['*'] : allowedSections || user.allowedSections;
-    } else if (allowedSections) {
-      user.allowedSections = user.role === 'admin' ? ['*'] : allowedSections;
+      (user as { allowedPermissions?: string[] }).allowedPermissions = isMainAdmin
+        ? []
+        : (Array.isArray(allowedPermissions) ? allowedPermissions : (user as { allowedPermissions?: string[] }).allowedPermissions || []);
+    } else {
+      if (allowedSections) {
+        user.allowedSections = user.role === 'admin' ? ['*'] : allowedSections;
+      }
+      if (Array.isArray(allowedPermissions)) {
+        (user as { allowedPermissions?: string[] }).allowedPermissions = user.role === 'admin' ? [] : allowedPermissions;
+      }
     }
     
     if (password && password.trim().length > 0) {
@@ -132,6 +143,7 @@ adminRouter.put('/users/:id', async (req, res, next) => {
         isMainAdmin: user.role === 'admin',
         status: user.status,
         allowedSections: user.allowedSections,
+        allowedPermissions: (user as { allowedPermissions?: string[] }).allowedPermissions || [],
         createdAt: (user as any).createdAt,
       }
     });

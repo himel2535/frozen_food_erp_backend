@@ -83,6 +83,7 @@ authRouter.post('/login', async (req, res, next) => {
         isMainAdmin: user.role === 'admin',
         imageUrl: user.imageUrl,
         allowedSections: user.allowedSections || ['dashboard'],
+        allowedPermissions: (user as { allowedPermissions?: string[] }).allowedPermissions || [],
         status: user.status,
       }
     });
@@ -109,6 +110,7 @@ authRouter.get('/me', requireAuth, (req, res) => {
       isMainAdmin: user.role === 'admin',
       imageUrl: user.imageUrl,
       allowedSections: user.allowedSections || ['dashboard'],
+      allowedPermissions: user.allowedPermissions || [],
       status: user.status,
     }
   });

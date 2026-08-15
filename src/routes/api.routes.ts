@@ -51,8 +51,13 @@ import {
 } from '../controllers/accountingController.js';
 import { getSalarySheetSummary } from '../controllers/payrollController.js';
 import { cacheGetResponse } from '../middleware/responseCache.js';
+import { requireInventoryEdit } from '../middleware/requireInventoryEdit.js';
 
 const REPORT_CACHE_MS = 60_000;
+
+export const apiRouter = Router();
+
+apiRouter.use(requireInventoryEdit);
 
 function registerCrud(
   router: Router,
@@ -277,8 +282,6 @@ const stockAdjustmentCtrl = createCrudController(StockAdjustment, {
   defaultSort: { createdAt: -1 },
   legacyIdPrefix: 'ADJ',
 });
-
-export const apiRouter = Router();
 
 apiRouter.get('/', (_req, res) => {
   res.json({
