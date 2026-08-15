@@ -42,10 +42,10 @@ async function main() {
   const app = createApp();
   const httpServer = createServer(app);
   attachSocket(httpServer);
-  const server = httpServer.listen(env.port, () => {
-    console.log(`[server] Running on http://localhost:${env.port}`);
-    console.log(`[server] Health → http://localhost:${env.port}/health`);
-    console.log(`[server] API    → http://localhost:${env.port}/api/v1`);
+  const server = httpServer.listen(env.port, '0.0.0.0', () => {
+    console.log(`[server] Listening on 0.0.0.0:${env.port}`);
+    console.log(`[server] Health → /health`);
+    console.log(`[server] API    → /api/v1`);
   });
 
   const shutdown = async (signal: string) => {

@@ -1,0 +1,23 @@
+# Local laptop demo only (docker compose). Not used by Railway.
+# Railway ignores this filename and keeps building with Nixpacks.
+# MongoDB stays on Atlas (MONGODB_URI from env_file).
+
+FROM node:20-alpine AS builder
+RUN apk add --no-cache python3 make g++
+WORKDIR /app
+COPY package.json package-lock.json tsconfig.json ./
+COPY src ./src
+RUN npm ci && npm run build
+
+FROM builder AS prod-deps
+RUN npm prune --omit=dev
+
+FROM node:20-alpine AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+ENV NODE_OPTIONS=--dns-result-order=ipv4first
+COPY package.json ./
+COPY --from=prod-deps /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
+EXPOSE 5000
+CMD ["node", "dist/server.js"]

@@ -1,0 +1,7 @@
+# Production stays on Nixpacks (same as today).
+# Local Docker uses Dockerfile.local so Railway does not switch builders.
+
+[deploy]
+startCommand = "node dist/server.js"
+healthcheckPath = "/health"
+healthcheckTimeout = 30
