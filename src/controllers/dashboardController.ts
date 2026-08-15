@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import {
   Customer,
+  Invoice,
   Lead,
   SalesOrder,
   Product,
@@ -16,16 +17,18 @@ function tenantFilter(tenantId: string) {
   return { tenantId };
 }
 
-function monthStartIso() {
+/** Local calendar YYYY-MM — invoice issueDate/date are date strings, not ISO datetimes. */
+function currentMonthPrefix() {
   const now = new Date();
-  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  return `${now.getFullYear()}-${month}`;
 }
 
 /** Dashboard KPI aggregates — computed in MongoDB instead of shipping full collections. */
 export const getDashboardSummary = asyncHandler(async (req: Request, res: Response) => {
   const tenantId = String(req.query.tenantId ?? 'default');
   const filter = tenantFilter(tenantId);
-  const monthStart = monthStartIso();
+  const monthPrefix = currentMonthPrefix();
 
   const [
     salesSummary,
@@ -49,9 +52,24 @@ export const getDashboardSummary = asyncHandler(async (req: Request, res: Respon
       { $match: filter },
       { $group: { _id: null, count: { $sum: 1 }, total: { $sum: { $ifNull: ['$total', 0] } } } },
     ]),
-    SalesOrder.aggregate([
-      { $match: { ...filter, $or: [{ date: { $gte: monthStart } }, { createdAt: { $gte: new Date(monthStart) } }] } },
-      { $group: { _id: null, count: { $sum: 1 }, revenue: { $sum: { $ifNull: ['$total', 0] } } } },
+    Invoice.aggregate([
+      {
+        $match: {
+          ...filter,
+          status: { $nin: ['cancelled', 'draft'] },
+          $or: [
+            { issueDate: { $regex: `^${monthPrefix}` } },
+            { date: { $regex: `^${monthPrefix}` } },
+          ],
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          count: { $sum: 1 },
+          revenue: { $sum: { $ifNull: ['$amount', { $ifNull: ['$total', 0] }] } },
+        },
+      },
     ]),
     SalesOrder.countDocuments({ ...filter, status: { $in: ['confirmed', 'processing', 'draft', 'Confirmed', 'Processing', 'Draft'] } }),
     Lead.aggregate([
