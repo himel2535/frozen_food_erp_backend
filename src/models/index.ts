@@ -48,3 +48,5 @@ export { StockTransfer } from './StockTransfer.js';
 
 export { StockAdjustment } from './StockAdjustment.js';
 
+export { InboxNotification } from './InboxNotification.js';
+

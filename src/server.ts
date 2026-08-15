@@ -1,7 +1,9 @@
+import { createServer } from 'http';
 import { createApp } from './app.js';
 import { connectDatabase, disconnectDatabase } from './config/database.js';
 import { env } from './config/env.js';
 import { disconnectRedis, initRedis } from './lib/redisClient.js';
+import { attachSocket } from './realtime/socket.js';
 
 import { Customer, Invoice } from './models/index.js';
 
@@ -38,7 +40,9 @@ async function main() {
   await initRedis();
 
   const app = createApp();
-  const server = app.listen(env.port, () => {
+  const httpServer = createServer(app);
+  attachSocket(httpServer);
+  const server = httpServer.listen(env.port, () => {
     console.log(`[server] Running on http://localhost:${env.port}`);
     console.log(`[server] Health → http://localhost:${env.port}/health`);
     console.log(`[server] API    → http://localhost:${env.port}/api/v1`);

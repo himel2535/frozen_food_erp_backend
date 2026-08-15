@@ -51,8 +51,10 @@ import {
   getTrialBalanceSummary,
 } from '../controllers/accountingController.js';
 import { getSalarySheetSummary } from '../controllers/payrollController.js';
+import { listNotifications } from '../controllers/notificationController.js';
 import { cacheGetResponse } from '../middleware/responseCache.js';
 import { requireInventoryEdit } from '../middleware/requireInventoryEdit.js';
+import { createAndEmitNotification } from '../services/notify.js';
 
 const REPORT_CACHE_MS = 60_000;
 
@@ -118,6 +120,16 @@ const salesOrderCtrl = createCrudController(SalesOrder, {
   searchFields: ['legacyId', 'customer', 'customerName'],
   defaultSort: { createdAt: -1 },
   legacyIdPrefix: 'SO',
+  onCreated: async (doc) => {
+    const json = doc.toJSON();
+    const legacyId = String(json.legacyId ?? json.id ?? doc._id ?? '');
+    await createAndEmitNotification({
+      tenantId: String(json.tenantId ?? doc.tenantId ?? 'default'),
+      type: 'sales_order',
+      message: `New sales order ${legacyId} created`,
+      refId: String(doc._id),
+    });
+  },
 });
 
 const invoiceCtrl = createCrudController(Invoice, {
@@ -315,6 +327,7 @@ apiRouter.get('/', (_req, res) => {
       stockTransfers: '/api/v1/stock-transfers',
       stockAdjustments: '/api/v1/stock-adjustments',
       dashboardSummary: '/api/v1/dashboard/summary',
+      notifications: '/api/v1/notifications',
       reports: {
         sales: '/api/v1/reports/sales',
         productSales: '/api/v1/reports/product-sales',
@@ -335,6 +348,7 @@ apiRouter.get('/', (_req, res) => {
 });
 
 apiRouter.get('/dashboard/summary', cacheGetResponse(60_000), getDashboardSummary);
+apiRouter.get('/notifications', listNotifications);
 
 apiRouter.get('/balance-sheet/summary', cacheGetResponse(REPORT_CACHE_MS), getBalanceSheetSummary);
 apiRouter.get('/profit-loss/summary', cacheGetResponse(REPORT_CACHE_MS), getProfitLossSummary);

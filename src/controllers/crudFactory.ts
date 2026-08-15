@@ -37,6 +37,13 @@ export function createCrudController<T extends Record<string, unknown>>(
     listCachePrefix?: string;
     /** Whether to use MongoDB native $text search (if indexes exist) instead of $regex */
     useTextSearch?: boolean;
+    /** Optional post-create hook (e.g. realtime notifications). Must not throw to the client. */
+    onCreated?: (doc: {
+      _id: unknown;
+      tenantId?: string;
+      legacyId?: string;
+      toJSON: () => Record<string, unknown>;
+    }) => void | Promise<void>;
   },
 ) {
   const {
@@ -47,6 +54,7 @@ export function createCrudController<T extends Record<string, unknown>>(
     autoFields = {},
     listCachePrefix,
     useTextSearch = false,
+    onCreated,
   } = options;
 
   function clearCaches() {
@@ -163,6 +171,13 @@ export function createCrudController<T extends Record<string, unknown>>(
   const create = asyncHandler(async (req: Request, res: Response) => {
     const doc = await createDocument(req.body as Record<string, unknown>);
     clearCaches();
+    if (onCreated) {
+      try {
+        await onCreated(doc);
+      } catch (err) {
+        console.error(`[${resourceName}] onCreated failed`, err);
+      }
+    }
     sendSuccess(res, doc.toJSON(), undefined, 201);
   });
 
