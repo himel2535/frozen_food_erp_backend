@@ -20,10 +20,18 @@ export function userCanEditInventory(user: { role?: string; allowedPermissions?:
   return (user.allowedPermissions ?? []).includes(INVENTORY_EDIT_PERMISSION);
 }
 
-export function isInventoryMutationPath(path: string, method: string): boolean {
-  if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(method.toUpperCase())) return false;
-  if (path.endsWith('/seed')) return true;
-  return INVENTORY_MUTATION_PREFIXES.some(
+/** True when the request modifies existing inventory data (edit/delete/approve), not create. */
+export function isInventoryEditRequiredPath(path: string, method: string): boolean {
+  const verb = method.toUpperCase();
+  const inInventoryScope = INVENTORY_MUTATION_PREFIXES.some(
     (prefix) => path === prefix || path.startsWith(`${prefix}/`),
   );
+  if (!inInventoryScope) return false;
+
+  if (path.endsWith('/seed')) return true;
+  if (verb === 'POST' && (path.endsWith('/approve') || path.endsWith('/complete'))) return true;
+  if (['PUT', 'PATCH', 'DELETE'].includes(verb)) return true;
+
+  // POST create (e.g. POST /products) is allowed with section access only.
+  return false;
 }

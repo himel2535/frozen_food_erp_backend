@@ -1,9 +1,9 @@
 import type { Request, Response, NextFunction } from 'express';
 import { ApiError } from '../utils/ApiError.js';
-import { isInventoryMutationPath, userCanEditInventory } from '../config/granularPermissions.js';
+import { isInventoryEditRequiredPath, userCanEditInventory } from '../config/granularPermissions.js';
 
 export function requireInventoryEdit(req: Request, _res: Response, next: NextFunction) {
-  if (!isInventoryMutationPath(req.path, req.method)) {
+  if (!isInventoryEditRequiredPath(req.path, req.method)) {
     return next();
   }
 
