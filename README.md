@@ -137,7 +137,11 @@ Vercel env:
 ```text
 NEXT_PUBLIC_API_URL=https://toysfactoryerpbackend-production.up.railway.app/api/v1
 NEXT_PUBLIC_SOCKET_URL=https://toysfactoryerpbackend-production.up.railway.app
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=monwar-hossan-himel
+NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET=toys_factory_erp_preset
 ```
+
+`NEXT_PUBLIC_*` is inlined at **build** time. Local `web/.env.local` is gitignored and is not used on Vercel. Cloudinary cloud name + unsigned upload preset also ship in [`web/.env.production`](https://github.com/himel2535/toys_factory_erp/blob/main/web/.env.production) so production/preview builds have them even if the dashboard vars are missing. After changing Cloudinary keys, redeploy the frontend.
 
 Railway env: `MONGODB_URI`, `CORS_ORIGIN` (must include `https://toys-factory-erp-one.vercel.app` and `http://localhost:3000` for local work), `JWT_SECRET`, optional `REDIS_URL`. Socket.io uses the same CORS list. Railway sets `PORT` (often `8080`) — that is the container port, not a public URL.
 
@@ -211,7 +215,7 @@ Then: app [http://localhost:3000](http://localhost:3000) · health [http://local
 
 | File | Purpose |
 | --- | --- |
-| [Frontend `.env.example`](https://github.com/himel2535/toys_factory_erp/blob/main/web/.env.example) | `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_SOCKET_URL` |
+| [Frontend `.env.example`](https://github.com/himel2535/toys_factory_erp/blob/main/web/.env.example) | `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_SOCKET_URL`, Cloudinary upload keys |
 | [Backend `.env.example`](https://github.com/himel2535/toys_factory_erp_backend/blob/main/.env.example) | `PORT`, `MONGODB_URI`, `CORS_ORIGIN`, `JWT_SECRET`, `REDIS_URL` |
 
 Do not commit `.env` / `.env.local`.
