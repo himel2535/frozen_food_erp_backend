@@ -15,6 +15,7 @@ const warehouseSchema = new Schema(
     allowedProductTypes: String,
     storageRules: String,
     imageUrl: String,
+    imagePublicId: String,
     meta: Schema.Types.Mixed,
   },
   timestampsConfig,

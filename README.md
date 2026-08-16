@@ -132,6 +132,10 @@ This is operational today for sales-order create (`POST /api/v1/sales-orders`). 
 | Express + Socket.io | **Railway** | REST, JWT, WebSocket, Atlas |
 | MongoDB | **Atlas** | Source of truth |
 
+Put **Vercel, Railway, and Atlas in the same region**. For Bangladesh, use Singapore: Vercel `sin1` (frontend `vercel.json`), Railway Singapore, Atlas `ap-southeast-1`. A US frontend talking to a distant API/DB adds hundreds of milliseconds on every request.
+
+Set `REDIS_URL` on Railway in that same region. Empty `REDIS_URL` uses an in-memory GET cache (lost on restart).
+
 Vercel env:
 
 ```text
@@ -205,11 +209,11 @@ Then: app [http://localhost:3000](http://localhost:3000) · health [http://local
 
 ## Engineering notes
 
-- **Cache:** optional Redis for heavy GET responses; empty `REDIS_URL` falls back to an in-memory map with TTL. Mutations clear related prefixes.
-- **Ledger consistency:** Mongoose post-save hooks keep invoice paid/due and customer `totalDue` in sync; a boot-time pass reconciles customer dues from invoices.
-- **Queries:** compound indexes include `tenantId`; list endpoints paginate and project fields; `.lean()` on read-only aggregations.
+- **Cache:** optional Redis for heavy GET responses (`[cache] HIT memory|redis|MISS` in logs). Empty `REDIS_URL` falls back to an in-memory map with TTL. Dashboard cache key is `tenantId` only. Mutations clear related prefixes.
+- **Ledger consistency:** Mongoose post-save hooks keep invoice paid/due and customer `totalDue` in sync.
+- **Queries:** compound indexes include `tenantId` (boot `ensureIndexes`); list endpoints paginate and project fields; `.lean()` on read-only aggregations. API logs `[timing] METHOD /path status totalMs`; dashboard also logs named DB legs.
 - **Client:** inflight GET deduplication in the API client so parallel mounts share one request.
-- **Dashboard:** server fetch uses `cache: 'no-store'`, then the client refreshes on mount.
+- **Dashboard:** RSC fetches `/dashboard/summary` only. List pages do not block navigation on server prefetch.
 
 ## Environment
 

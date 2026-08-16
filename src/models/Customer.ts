@@ -26,6 +26,7 @@ const customerSchema = new Schema(
     shippingAddress: String,
     shippingCity: String,
     imageUrl: String,
+    imagePublicId: String,
     notes: String,
     tags: [String],
     totalSales: { type: Number, default: 0 },

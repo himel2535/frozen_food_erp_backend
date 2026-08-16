@@ -23,6 +23,7 @@ const employeeSchema = new Schema(
     address: String,
     city: String,
     imageUrl: String,
+    imagePublicId: String,
     notes: String,
     meta: Schema.Types.Mixed,
   },

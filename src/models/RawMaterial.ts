@@ -19,6 +19,7 @@ const rawMaterialSchema = new Schema(
     supplierPrice: { type: Number, default: 0 },
     notes: String,
     imageUrl: String,
+    imagePublicId: String,
     status: { type: String, default: 'active' },
     meta: Schema.Types.Mixed,
   },

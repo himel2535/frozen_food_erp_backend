@@ -17,6 +17,7 @@ const complaintSchema = new Schema(
     sku: String,
     slaDueAt: String,
     evidenceImageUrl: String,
+    evidenceImagePublicId: String,
     resolutionNotes: String,
     meta: Schema.Types.Mixed,
   },

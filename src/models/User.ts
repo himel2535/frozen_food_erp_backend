@@ -31,6 +31,7 @@ const userSchema = new Schema(
       default: 'active',
     },
     imageUrl: String,
+    imagePublicId: String,
     allowedSections: [String],
     allowedPermissions: [String],
   },

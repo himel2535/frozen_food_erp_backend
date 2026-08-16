@@ -26,6 +26,7 @@ const productSchema = new Schema(
     defaultWarehouse: String,
     warehouseStock: Schema.Types.Mixed,
     imageUrl: String,
+    imagePublicId: String,
     description: String,
     status: { type: String, enum: ['active', 'inactive', 'discontinued'], default: 'active' },
     discontinued: { type: Boolean, default: false },

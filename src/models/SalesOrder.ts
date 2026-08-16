@@ -21,6 +21,7 @@ const salesOrderSchema = new Schema(
     total: { type: Number, default: 0 },
     notes: String,
     attachmentUrl: String,
+    attachmentPublicId: String,
     attachmentName: String,
     meta: Schema.Types.Mixed,
   },

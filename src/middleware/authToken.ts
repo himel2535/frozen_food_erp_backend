@@ -31,7 +31,7 @@ function bearerToken(authorization: string | string[] | undefined): string | und
 }
 
 export function extractAccessTokenFromRequest(req: Request): string | undefined {
-  const cookieToken = req.cookies?.token;
+  const cookieToken = req.cookies?.token ?? parseCookieValue(req.headers.cookie, 'token');
   if (typeof cookieToken === 'string' && cookieToken.trim()) return cookieToken.trim();
   return bearerToken(req.header('authorization'));
 }

@@ -8,6 +8,8 @@ type CacheEntry = {
   expiresAt: number;
 };
 
+type CacheKeyFn = (req: Request) => string;
+
 const store = new Map<string, CacheEntry>();
 const REDIS_KEY_PREFIX = 'erp:cache:';
 
@@ -42,39 +44,48 @@ function attachCacheWriter(res: Response, key: string, ttlMs: number) {
   }) as typeof res.json;
 }
 
+export function dashboardSummaryCacheKey(req: Request): string {
+  const tenantId = String(req.query.tenantId ?? 'default');
+  return `/api/v1/dashboard/summary?tenantId=${encodeURIComponent(tenantId)}`;
+}
+
 /** GET cache — Redis when REDIS_URL is set, otherwise in-memory. */
-export function cacheGetResponse(ttlMs: number) {
-  return (req: Request, res: Response, next: NextFunction) => {
+export function cacheGetResponse(ttlMs: number, keyFn: CacheKeyFn = (req) => req.originalUrl) {
+  return async (req: Request, res: Response, next: NextFunction) => {
     if (req.method !== 'GET') return next();
 
-    const key = req.originalUrl;
+    const key = keyFn(req);
     const memoryHit = readMemory(key);
     if (memoryHit) {
+      console.log(`[cache] HIT memory ${req.method} ${key}`);
       return sendSuccess(res, memoryHit.body, memoryHit.meta);
     }
 
-    attachCacheWriter(res, key, ttlMs);
-
-    if (!isRedisReady()) return next();
-
-    void redisGet(`${REDIS_KEY_PREFIX}${key}`).then((raw) => {
-      if (res.headersSent) return;
-      if (!raw) {
-        next();
-        return;
-      }
+    if (isRedisReady()) {
       try {
-        const parsed = JSON.parse(raw) as CacheEntry;
-        if (parsed.expiresAt <= Date.now()) {
-          next();
-          return;
+        const raw = await redisGet(`${REDIS_KEY_PREFIX}${key}`);
+        if (res.headersSent) return;
+        if (raw) {
+          try {
+            const parsed = JSON.parse(raw) as CacheEntry;
+            if (parsed.expiresAt > Date.now()) {
+              writeMemory(key, parsed);
+              console.log(`[cache] HIT redis ${req.method} ${key}`);
+              return sendSuccess(res, parsed.body, parsed.meta);
+            }
+          } catch {
+            /* fall through to miss */
+          }
         }
-        writeMemory(key, parsed);
-        sendSuccess(res, parsed.body, parsed.meta);
       } catch {
-        next();
+        /* fall through to miss */
       }
-    }).catch(() => next());
+    }
+
+    if (res.headersSent) return;
+    console.log(`[cache] MISS ${req.method} ${key}`);
+    attachCacheWriter(res, key, ttlMs);
+    next();
   };
 }
 

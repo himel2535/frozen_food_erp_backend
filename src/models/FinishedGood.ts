@@ -16,6 +16,7 @@ const finishedGoodSchema = new Schema(
     location: String,
     notes: String,
     imageUrl: String,
+    imagePublicId: String,
     status: { type: String, default: 'active' },
     meta: Schema.Types.Mixed,
   },

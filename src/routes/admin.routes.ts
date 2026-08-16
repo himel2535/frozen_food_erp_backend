@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { User } from '../models/User.js';
 import { ApiError } from '../utils/ApiError.js';
 import { requireAuth } from '../middleware/requireAuth.js';
+import { scheduleReplacedCloudinaryDeletes } from '../utils/cloudinary.js';
 import mongoose from 'mongoose';
 
 export const adminRouter = Router();
@@ -25,6 +26,7 @@ adminRouter.get('/users', async (_req, res, next) => {
       name: u.name,
       email: u.email,
       imageUrl: u.imageUrl,
+      imagePublicId: (u as { imagePublicId?: string }).imagePublicId,
       role: u.role,
       isMainAdmin: u.role === 'admin',
       status: u.status,
@@ -42,7 +44,7 @@ adminRouter.get('/users', async (_req, res, next) => {
 // POST /api/v1/admin/users
 adminRouter.post('/users', async (req, res, next) => {
   try {
-    const { name, email, password, imageUrl, allowedSections, allowedPermissions, isMainAdmin } = req.body;
+    const { name, email, password, imageUrl, imagePublicId, allowedSections, allowedPermissions, isMainAdmin } = req.body;
     
     if (!name || !email || !password) {
       throw new ApiError(400, 'Name, email, and password are required');
@@ -58,6 +60,7 @@ adminRouter.post('/users', async (req, res, next) => {
       email: email.toLowerCase().trim(),
       password,
       imageUrl: imageUrl || undefined,
+      imagePublicId: imagePublicId || undefined,
       role: isMainAdmin ? 'admin' : 'user',
       allowedSections: isMainAdmin ? ['*'] : allowedSections || [],
       allowedPermissions: isMainAdmin ? [] : (Array.isArray(allowedPermissions) ? allowedPermissions : []),
@@ -72,6 +75,7 @@ adminRouter.post('/users', async (req, res, next) => {
         name: user.name,
         email: user.email,
         imageUrl: user.imageUrl,
+        imagePublicId: (user as { imagePublicId?: string }).imagePublicId,
         role: user.role,
         isMainAdmin: user.role === 'admin',
         status: user.status,
@@ -99,7 +103,11 @@ adminRouter.put('/users/:id', async (req, res, next) => {
     }
     
     const adminUid = (req as any).user._id.toString();
-    const { name, imageUrl, allowedSections, allowedPermissions, status, password, isMainAdmin } = req.body;
+    const previous = {
+      imageUrl: user.imageUrl,
+      imagePublicId: (user as { imagePublicId?: string }).imagePublicId,
+    };
+    const { name, imageUrl, imagePublicId, allowedSections, allowedPermissions, status, password, isMainAdmin } = req.body;
     
     if (status === 'disabled' && id === adminUid) {
       throw new ApiError(400, 'You cannot disable your own account');
@@ -107,6 +115,9 @@ adminRouter.put('/users/:id', async (req, res, next) => {
     
     if (name !== undefined) user.name = name.trim();
     if (imageUrl !== undefined) user.imageUrl = imageUrl.trim();
+    if (imagePublicId !== undefined) {
+      (user as { imagePublicId?: string }).imagePublicId = String(imagePublicId).trim();
+    }
     
     if (status === 'active' || status === 'disabled') {
       user.status = status;
@@ -132,6 +143,11 @@ adminRouter.put('/users/:id', async (req, res, next) => {
     }
     
     await user.save();
+
+    scheduleReplacedCloudinaryDeletes(previous, {
+      imageUrl: user.imageUrl,
+      imagePublicId: (user as { imagePublicId?: string }).imagePublicId,
+    });
     
     res.json({
       data: {
@@ -139,6 +155,7 @@ adminRouter.put('/users/:id', async (req, res, next) => {
         name: user.name,
         email: user.email,
         imageUrl: user.imageUrl,
+        imagePublicId: (user as { imagePublicId?: string }).imagePublicId,
         role: user.role,
         isMainAdmin: user.role === 'admin',
         status: user.status,

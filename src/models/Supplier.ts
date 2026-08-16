@@ -20,6 +20,7 @@ const supplierSchema = new Schema(
     due: { type: Number, default: 0 },
     balance: { type: Number, default: 0 },
     imageUrl: String,
+    imagePublicId: String,
     notes: String,
     meta: Schema.Types.Mixed,
   },

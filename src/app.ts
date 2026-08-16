@@ -6,6 +6,7 @@ import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import { env } from './config/env.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
+import { requestTiming } from './middleware/requestTiming.js';
 import { requireAuth } from './middleware/requireAuth.js';
 import { authRouter } from './routes/auth.routes.js';
 import { healthRouter } from './routes/health.routes.js';
@@ -27,6 +28,7 @@ export function createApp() {
   );
   app.use(express.json({ limit: '2mb' }));
   app.use(express.urlencoded({ extended: true }));
+  app.use(requestTiming);
 
   if (!env.isProd) {
     app.use(morgan('dev'));

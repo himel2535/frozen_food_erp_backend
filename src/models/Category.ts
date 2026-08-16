@@ -15,6 +15,7 @@ const categorySchema = new Schema(
     defaultUnitType: String,
     stockPolicy: { type: String, default: 'FIFO' },
     imageUrl: String,
+    imagePublicId: String,
     meta: Schema.Types.Mixed,
   },
   timestampsConfig,

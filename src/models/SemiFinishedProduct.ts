@@ -16,6 +16,7 @@ const semiFinishedSchema = new Schema(
     recipeId: String,
     notes: String,
     imageUrl: String,
+    imagePublicId: String,
     status: { type: String, default: 'active' },
     meta: Schema.Types.Mixed,
   },

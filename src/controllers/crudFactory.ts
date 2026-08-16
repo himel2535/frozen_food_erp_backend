@@ -7,6 +7,10 @@ import { listFieldsFor } from '../config/listFieldProfiles.js';
 import { clearResponseCache } from '../middleware/responseCache.js';
 import { posCategoryMongoFilter } from '../utils/posCategoryFilter.js';
 import { stampStockDurationOnCreate, stampStockDurationOnUpdate } from '../utils/stockDuration.js';
+import {
+  scheduleRemovedCloudinaryDeletes,
+  scheduleReplacedCloudinaryDeletes,
+} from '../utils/cloudinary.js';
 
 type SearchFields = string[];
 
@@ -203,6 +207,10 @@ export function createCrudController<T extends Record<string, unknown>>(
     }).lean();
     if (!doc) throw notFound(`${resourceName} not found`);
     clearCaches();
+    scheduleReplacedCloudinaryDeletes(
+      previous as Record<string, unknown>,
+      doc as Record<string, unknown>,
+    );
     if (onUpdated) {
       try {
         await onUpdated(previous as Record<string, unknown>, doc as Record<string, unknown>);
@@ -217,6 +225,7 @@ export function createCrudController<T extends Record<string, unknown>>(
     const doc = await model.findByIdAndDelete(req.params.id);
     if (!doc) throw notFound(`${resourceName} not found`);
     clearCaches();
+    scheduleRemovedCloudinaryDeletes(doc.toObject() as Record<string, unknown>);
     sendMessage(res, `${resourceName} deleted`);
   });
 

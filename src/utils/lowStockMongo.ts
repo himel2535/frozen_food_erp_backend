@@ -6,17 +6,15 @@ export function isQtyLowStock(qty: number, min: number): boolean {
 
 function qtyVsMinExpr(qtyPath: string, minExpr: unknown) {
   return {
-    $expr: {
-      $and: [
-        { $gt: [{ $ifNull: [qtyPath, 0] }, 0] },
-        { $gt: [minExpr, 0] },
-        { $lte: [{ $ifNull: [qtyPath, 0] }, minExpr] },
-      ],
-    },
+    $and: [
+      { $gt: [{ $ifNull: [qtyPath, 0] }, 0] },
+      { $gt: [minExpr, 0] },
+      { $lte: [{ $ifNull: [qtyPath, 0] }, minExpr] },
+    ],
   };
 }
 
-/** Product: reorderLevel if set, otherwise minStock. */
+/** Product: reorderLevel if set, otherwise minStock. Indexed stock/threshold bounds + $expr compare. */
 export function productLowStockFilter() {
   const threshold = {
     $cond: [
@@ -25,17 +23,28 @@ export function productLowStockFilter() {
       { $ifNull: ['$minStock', 0] },
     ],
   };
-  return qtyVsMinExpr('$stock', threshold);
+  return {
+    stock: { $gt: 0 },
+    $expr: qtyVsMinExpr('$stock', threshold),
+  };
 }
 
 /** Raw material: quantity vs threshold (0 = alerts off). */
 export function rawMaterialLowStockFilter() {
-  return qtyVsMinExpr('$quantity', { $ifNull: ['$threshold', 0] });
+  return {
+    quantity: { $gt: 0 },
+    threshold: { $gt: 0 },
+    $expr: qtyVsMinExpr('$quantity', { $ifNull: ['$threshold', 0] }),
+  };
 }
 
 /** Semi-finished / finished goods: quantity vs minStock. */
 export function quantityMinStockLowStockFilter() {
-  return qtyVsMinExpr('$quantity', { $ifNull: ['$minStock', 0] });
+  return {
+    quantity: { $gt: 0 },
+    minStock: { $gt: 0 },
+    $expr: qtyVsMinExpr('$quantity', { $ifNull: ['$minStock', 0] }),
+  };
 }
 
 export function resolveProductLowStockMin(row: Record<string, unknown>): number {

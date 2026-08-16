@@ -36,10 +36,14 @@ export async function ensureDatabaseIndexes(): Promise<void> {
     withIndexes(name, [TENANT_STATUS, TENANT_CREATED, TENANT_LEGACY]);
   }
 
-  withIndexes('Invoice', [TENANT_DATE, TENANT_CUSTOMER]);
+  withIndexes('Invoice', [TENANT_DATE, TENANT_CUSTOMER, { tenantId: 1, issueDate: -1 }]);
   withIndexes('SalesOrder', [TENANT_DATE]);
   withIndexes('Payment', [TENANT_DATE]);
   withIndexes('Lead', [TENANT_FOLLOWUP]);
+  withIndexes('Product', [{ tenantId: 1, stock: 1 }]);
+  withIndexes('RawMaterial', [{ tenantId: 1, quantity: 1 }]);
+  withIndexes('SemiFinishedProduct', [{ tenantId: 1, quantity: 1 }]);
+  withIndexes('FinishedGood', [{ tenantId: 1, quantity: 1 }]);
 
   await Promise.allSettled(tasks);
   console.log(`[db] Ensured ${tasks.length} compound indexes`);

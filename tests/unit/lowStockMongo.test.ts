@@ -30,21 +30,29 @@ describe('resolveProductLowStockMin', () => {
 
 describe('mongo filter shape', () => {
   it('product filter uses stock vs reorder/minStock', () => {
-    const expr = JSON.stringify(productLowStockFilter());
+    const filter = productLowStockFilter();
+    const expr = JSON.stringify(filter);
+    expect(filter.stock).toEqual({ $gt: 0 });
     expect(expr).toContain('$stock');
     expect(expr).toContain('$reorderLevel');
     expect(expr).toContain('$minStock');
   });
 
   it('raw material filter uses quantity vs threshold', () => {
-    const expr = JSON.stringify(rawMaterialLowStockFilter());
+    const filter = rawMaterialLowStockFilter();
+    const expr = JSON.stringify(filter);
+    expect(filter.quantity).toEqual({ $gt: 0 });
+    expect(filter.threshold).toEqual({ $gt: 0 });
     expect(expr).toContain('$quantity');
     expect(expr).toContain('$threshold');
     expect(expr).not.toContain('$stock');
   });
 
   it('semi/finished filter uses quantity vs minStock', () => {
-    const expr = JSON.stringify(quantityMinStockLowStockFilter());
+    const filter = quantityMinStockLowStockFilter();
+    const expr = JSON.stringify(filter);
+    expect(filter.quantity).toEqual({ $gt: 0 });
+    expect(filter.minStock).toEqual({ $gt: 0 });
     expect(expr).toContain('$quantity');
     expect(expr).toContain('$minStock');
   });
