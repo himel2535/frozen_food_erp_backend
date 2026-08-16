@@ -20,6 +20,8 @@ const salesOrderSchema = new Schema(
     tax: { type: Number, default: 0 },
     total: { type: Number, default: 0 },
     notes: String,
+    attachmentUrl: String,
+    attachmentName: String,
     meta: Schema.Types.Mixed,
   },
   timestampsConfig,
