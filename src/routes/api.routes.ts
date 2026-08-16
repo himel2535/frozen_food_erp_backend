@@ -57,6 +57,7 @@ import { listNotifications } from '../controllers/notificationController.js';
 import { cacheGetResponse, dashboardSummaryCacheKey } from '../middleware/responseCache.js';
 import { requireInventoryEdit } from '../middleware/requireInventoryEdit.js';
 import { createAndEmitNotification } from '../services/notify.js';
+import { getNextProductSku } from '../controllers/productSkuController.js';
 
 const REPORT_CACHE_MS = 60_000;
 
@@ -96,7 +97,11 @@ const productCtrl = createCrudController(Product, {
   legacyIdPrefix: 'PROD',
   autoFields: { sku: 'SKU' },
   stockDurationQtyField: 'stock',
-  onUpdated: syncProductLineSnapshots,
+  onUpdated: (previous, next) => {
+    void syncProductLineSnapshots(previous, next).catch((err) => {
+      console.error('[Product] syncProductLineSnapshots failed', err);
+    });
+  },
 });
 
 const supplierCtrl = createCrudController(Supplier, {
@@ -362,6 +367,7 @@ apiRouter.get('/reports/financial', cacheGetResponse(REPORT_CACHE_MS), getFinanc
 apiRouter.get('/reports/hr', cacheGetResponse(REPORT_CACHE_MS), getHrReport);
 
 registerCrud(apiRouter, '/customers', customerCtrl, { listCacheMs: 30000 });
+apiRouter.get('/products/next-sku', getNextProductSku);
 registerCrud(apiRouter, '/products', productCtrl, { listCacheMs: 30000 });
 registerCrud(apiRouter, '/suppliers', supplierCtrl, { listCacheMs: 30000 });
 registerCrud(apiRouter, '/employees', employeeCtrl, { listCacheMs: 30000 });

@@ -50,3 +50,5 @@ export { StockAdjustment } from './StockAdjustment.js';
 
 export { InboxNotification } from './InboxNotification.js';
 
+export { Sequence } from './Sequence.js';
+
