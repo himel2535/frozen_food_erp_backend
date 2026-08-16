@@ -17,10 +17,18 @@ function isEmpty(value: unknown): boolean {
   return value == null || String(value).trim() === '';
 }
 
-function serializeLeanDoc(doc: Record<string, unknown>) {
+export function serializeLeanDoc(doc: Record<string, unknown>) {
   const id = String(doc._id ?? doc.id ?? '');
   const { _id, __v, ...rest } = doc;
   return { ...rest, id };
+}
+
+/** Case-insensitive substring match across list search fields (`dd` matches `ddd`). */
+export function buildListSearchFilter(search: string, searchFields: string[]): Record<string, unknown> | null {
+  const q = search.trim();
+  if (!q || !searchFields.length) return null;
+  const regex = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+  return { $or: searchFields.map((field) => ({ [field]: regex })) };
 }
 
 export function createCrudController<T extends Record<string, unknown>>(
@@ -35,8 +43,6 @@ export function createCrudController<T extends Record<string, unknown>>(
     autoFields?: Record<string, string>;
     /** Clear GET list cache for this path prefix after mutations (e.g. /api/v1/products). */
     listCachePrefix?: string;
-    /** Whether to use MongoDB native $text search (if indexes exist) instead of $regex */
-    useTextSearch?: boolean;
     /** Optional post-create hook (e.g. realtime notifications). Must not throw to the client. */
     onCreated?: (doc: {
       _id: unknown;
@@ -44,6 +50,8 @@ export function createCrudController<T extends Record<string, unknown>>(
       legacyId?: string;
       toJSON: () => Record<string, unknown>;
     }) => void | Promise<void>;
+    /** Optional post-update hook. Must not throw to the client. */
+    onUpdated?: (previous: Record<string, unknown>, next: Record<string, unknown>) => void | Promise<void>;
   },
 ) {
   const {
@@ -53,8 +61,8 @@ export function createCrudController<T extends Record<string, unknown>>(
     legacyIdPrefix,
     autoFields = {},
     listCachePrefix,
-    useTextSearch = false,
     onCreated,
+    onUpdated,
   } = options;
 
   function clearCaches() {
@@ -114,13 +122,9 @@ export function createCrudController<T extends Record<string, unknown>>(
     const tenantId = String(req.query.tenantId ?? 'default');
     const filter: FilterQuery<T> = { tenantId } as FilterQuery<T>;
 
-    if (search) {
-      if (useTextSearch) {
-        (filter as Record<string, unknown>).$text = { $search: search };
-      } else if (searchFields.length) {
-        const regex = new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-        filter.$or = searchFields.map((field) => ({ [field]: regex })) as FilterQuery<T>['$or'];
-      }
+    const searchFilter = buildListSearchFilter(search, searchFields);
+    if (searchFilter) {
+      Object.assign(filter, searchFilter);
     }
 
     const status = req.query.status;
@@ -183,12 +187,21 @@ export function createCrudController<T extends Record<string, unknown>>(
 
   const update = asyncHandler(async (req: Request, res: Response) => {
     const payload = preparePayload(req.body as Record<string, unknown>, false);
+    const previous = await model.findById(req.params.id).lean();
+    if (!previous) throw notFound(`${resourceName} not found`);
     const doc = await model.findByIdAndUpdate(req.params.id, payload, {
       new: true,
       runValidators: true,
     }).lean();
     if (!doc) throw notFound(`${resourceName} not found`);
     clearCaches();
+    if (onUpdated) {
+      try {
+        await onUpdated(previous as Record<string, unknown>, doc as Record<string, unknown>);
+      } catch (err) {
+        console.error(`[${resourceName}] onUpdated failed`, err);
+      }
+    }
     sendSuccess(res, doc);
   });
 

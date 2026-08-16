@@ -31,11 +31,13 @@ export const lineItemSchema = new Schema(
     description: String,
     name: String,
     sku: String,
+    productId: String,
     qty: { type: Number, default: 1 },
     rate: { type: Number, default: 0 },
     price: Number,
     total: Number,
     taxRate: Number,
+    imageUrl: String,
   },
   { _id: false },
 );

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { createCrudController } from '../controllers/crudFactory.js';
+import { syncProductLineSnapshots } from '../utils/syncProductLineSnapshots.js';
 import {
   approveStockAdjustment,
   approveStockIn,
@@ -81,7 +82,6 @@ function registerCrud(
 }
 
 const customerCtrl = createCrudController(Customer, {
-  useTextSearch: true,
   listCachePrefix: '/api/v1/customers',
   resourceName: 'Customer',
   searchFields: ['legacyId', 'name', 'company', 'email', 'phone'],
@@ -89,16 +89,15 @@ const customerCtrl = createCrudController(Customer, {
 });
 
 const productCtrl = createCrudController(Product, {
-  useTextSearch: true,
   listCachePrefix: '/api/v1/products',
   resourceName: 'Product',
   searchFields: ['legacyId', 'name', 'sku', 'category'],
   legacyIdPrefix: 'PROD',
   autoFields: { sku: 'SKU' },
+  onUpdated: syncProductLineSnapshots,
 });
 
 const supplierCtrl = createCrudController(Supplier, {
-  useTextSearch: true,
   listCachePrefix: '/api/v1/suppliers',
   resourceName: 'Supplier',
   searchFields: ['legacyId', 'name', 'code', 'email', 'phone'],
@@ -106,7 +105,6 @@ const supplierCtrl = createCrudController(Supplier, {
 });
 
 const employeeCtrl = createCrudController(Employee, {
-  useTextSearch: true,
   listCachePrefix: '/api/v1/employees',
   resourceName: 'Employee',
   searchFields: ['legacyId', 'name', 'employeeCode', 'department', 'email'],
@@ -141,7 +139,6 @@ const invoiceCtrl = createCrudController(Invoice, {
 });
 
 const leadCtrl = createCrudController(Lead, {
-  useTextSearch: true,
   listCachePrefix: '/api/v1/leads',
   resourceName: 'Lead',
   searchFields: ['legacyId', 'name', 'company', 'email', 'phone'],
@@ -150,7 +147,6 @@ const leadCtrl = createCrudController(Lead, {
 });
 
 const dealCtrl = createCrudController(Deal, {
-  useTextSearch: true,
   listCachePrefix: '/api/v1/deals',
   resourceName: 'Deal',
   searchFields: ['legacyId', 'title', 'company'],
@@ -199,7 +195,6 @@ const returnCtrl = createCrudController(SalesReturn, {
 });
 
 const complaintCtrl = createCrudController(Complaint, {
-  useTextSearch: true,
   listCachePrefix: '/api/v1/complaints',
   resourceName: 'Complaint',
   searchFields: ['legacyId', 'subject', 'customerName', 'ticketNo'],
@@ -241,7 +236,6 @@ const warehouseCtrl = createCrudController(Warehouse, {
 });
 
 const rawMaterialCtrl = createCrudController(RawMaterial, {
-  useTextSearch: true,
   listCachePrefix: '/api/v1/raw-materials',
   resourceName: 'Raw material',
   searchFields: ['legacyId', 'name', 'category'],
@@ -249,7 +243,6 @@ const rawMaterialCtrl = createCrudController(RawMaterial, {
 });
 
 const semiFinishedCtrl = createCrudController(SemiFinishedProduct, {
-  useTextSearch: true,
   listCachePrefix: '/api/v1/semi-finished-products',
   resourceName: 'Semi-finished product',
   searchFields: ['legacyId', 'name', 'category'],
@@ -257,7 +250,6 @@ const semiFinishedCtrl = createCrudController(SemiFinishedProduct, {
 });
 
 const finishedGoodCtrl = createCrudController(FinishedGood, {
-  useTextSearch: true,
   listCachePrefix: '/api/v1/finished-goods',
   resourceName: 'Finished good',
   searchFields: ['legacyId', 'name', 'category'],

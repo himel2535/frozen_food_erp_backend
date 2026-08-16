@@ -17,6 +17,26 @@ function tenantFilter(tenantId: string) {
   return { tenantId };
 }
 
+/** Stock still on hand, but at or below reorder level (or min stock if reorder is unset). */
+function productLowStockFilter() {
+  const threshold = {
+    $cond: [
+      { $gt: [{ $ifNull: ['$reorderLevel', 0] }, 0] },
+      { $ifNull: ['$reorderLevel', 0] },
+      { $ifNull: ['$minStock', 0] },
+    ],
+  };
+  return {
+    $expr: {
+      $and: [
+        { $gt: [{ $ifNull: ['$stock', 0] }, 0] },
+        { $gt: [threshold, 0] },
+        { $lte: [{ $ifNull: ['$stock', 0] }, threshold] },
+      ],
+    },
+  };
+}
+
 /** Local calendar YYYY-MM — invoice issueDate/date are date strings, not ISO datetimes. */
 function currentMonthPrefix() {
   const now = new Date();
@@ -120,7 +140,7 @@ export const getDashboardSummary = asyncHandler(async (req: Request, res: Respon
       { $group: { _id: null, count: { $sum: 1 }, total: { $sum: { $ifNull: ['$total', 0] } } } },
     ]),
     PurchaseOrder.countDocuments({ ...filter, status: { $in: ['Draft', 'Sent'] } }),
-    Product.countDocuments({ ...filter, $expr: { $lte: ['$stock', { $ifNull: ['$reorderLevel', 0] }] } }),
+    Product.countDocuments({ ...filter, ...productLowStockFilter() }),
     RawMaterial.countDocuments({ ...filter, $expr: { $lte: ['$stock', { $ifNull: ['$reorderLevel', 0] }] } }),
     SemiFinishedProduct.countDocuments({ ...filter, $expr: { $lte: ['$stock', { $ifNull: ['$reorderLevel', 0] }] } }),
     FinishedGood.countDocuments({ ...filter, $expr: { $lte: ['$stock', { $ifNull: ['$reorderLevel', 0] }] } }),
