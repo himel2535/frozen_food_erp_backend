@@ -1,7 +1,7 @@
 /** Mongoose `.select()` projections for list endpoints — omit heavy meta/notes fields. */
 export const LIST_FIELD_PROFILES: Record<string, string> = {
   Customer: 'legacyId tenantId name company email phone status totalDue creditLimit ownerId ownerName imageUrl createdAt updatedAt',
-  Product: 'legacyId tenantId name sku category productType status price cost stock minStock reorderLevel unit imageUrl discontinued createdAt updatedAt',
+  Product: 'legacyId tenantId name sku category productType status price cost stock minStock reorderLevel stockDurationDays stockDurationStartedAt unit imageUrl discontinued createdAt updatedAt',
   Supplier: 'legacyId tenantId name code email phone status due balance imageUrl createdAt updatedAt',
   Employee: 'legacyId tenantId name employeeCode department designation status phone email joinDate imageUrl createdAt updatedAt',
   'Sales order': 'legacyId tenantId customer customerName status total date items attachmentUrl attachmentName meta.attachmentUrl meta.attachmentName createdAt updatedAt',
@@ -18,7 +18,7 @@ export const LIST_FIELD_PROFILES: Record<string, string> = {
   Category: 'legacyId tenantId name status imageUrl createdAt updatedAt',
   Unit: 'legacyId tenantId name code status createdAt updatedAt',
   Warehouse: 'legacyId tenantId name location status imageUrl createdAt updatedAt',
-  'Raw material': 'legacyId tenantId name category sku unit stock reorderLevel cost price status imageUrl createdAt updatedAt',
+  'Raw material': 'legacyId tenantId name category sku unit quantity threshold stock reorderLevel cost price stockDurationDays stockDurationStartedAt status imageUrl createdAt updatedAt',
   'Semi-finished product': 'legacyId tenantId name category sku unit stock reorderLevel cost status imageUrl createdAt updatedAt',
   'Finished good': 'legacyId tenantId name category sku unit stock reorderLevel cost price status imageUrl createdAt updatedAt',
   'Stock in': 'legacyId tenantId reference status warehouse date createdAt updatedAt',

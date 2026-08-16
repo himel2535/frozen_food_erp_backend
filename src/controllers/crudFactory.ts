@@ -6,6 +6,7 @@ import { asyncHandler, parsePagination, paginationMeta } from '../utils/asyncHan
 import { listFieldsFor } from '../config/listFieldProfiles.js';
 import { clearResponseCache } from '../middleware/responseCache.js';
 import { posCategoryMongoFilter } from '../utils/posCategoryFilter.js';
+import { stampStockDurationOnCreate, stampStockDurationOnUpdate } from '../utils/stockDuration.js';
 
 type SearchFields = string[];
 
@@ -52,6 +53,8 @@ export function createCrudController<T extends Record<string, unknown>>(
     }) => void | Promise<void>;
     /** Optional post-update hook. Must not throw to the client. */
     onUpdated?: (previous: Record<string, unknown>, next: Record<string, unknown>) => void | Promise<void>;
+    /** When set, stamp stockDurationStartedAt on create and reset it when this qty field increases. */
+    stockDurationQtyField?: string;
   },
 ) {
   const {
@@ -63,6 +66,7 @@ export function createCrudController<T extends Record<string, unknown>>(
     listCachePrefix,
     onCreated,
     onUpdated,
+    stockDurationQtyField,
   } = options;
 
   function clearCaches() {
@@ -95,6 +99,7 @@ export function createCrudController<T extends Record<string, unknown>>(
           payload[field] = generateUniqueId(prefix);
         }
       }
+      if (stockDurationQtyField) stampStockDurationOnCreate(payload);
     } else {
       const clientLegacyId = payload.legacyId ?? body.id ?? body.legacyId;
       if (!isEmpty(clientLegacyId)) {
@@ -189,6 +194,9 @@ export function createCrudController<T extends Record<string, unknown>>(
     const payload = preparePayload(req.body as Record<string, unknown>, false);
     const previous = await model.findById(req.params.id).lean();
     if (!previous) throw notFound(`${resourceName} not found`);
+    if (stockDurationQtyField) {
+      stampStockDurationOnUpdate(previous as Record<string, unknown>, payload, stockDurationQtyField);
+    }
     const doc = await model.findByIdAndUpdate(req.params.id, payload, {
       new: true,
       runValidators: true,

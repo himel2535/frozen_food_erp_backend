@@ -12,29 +12,14 @@ import {
 import { PurchaseOrder, ProductionOrder } from '../models/extendedResources.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { sendSuccess } from '../utils/apiResponse.js';
+import {
+  productLowStockFilter,
+  rawMaterialLowStockFilter,
+  quantityMinStockLowStockFilter,
+} from '../utils/lowStockMongo.js';
 
 function tenantFilter(tenantId: string) {
   return { tenantId };
-}
-
-/** Stock still on hand, but at or below reorder level (or min stock if reorder is unset). */
-function productLowStockFilter() {
-  const threshold = {
-    $cond: [
-      { $gt: [{ $ifNull: ['$reorderLevel', 0] }, 0] },
-      { $ifNull: ['$reorderLevel', 0] },
-      { $ifNull: ['$minStock', 0] },
-    ],
-  };
-  return {
-    $expr: {
-      $and: [
-        { $gt: [{ $ifNull: ['$stock', 0] }, 0] },
-        { $gt: [threshold, 0] },
-        { $lte: [{ $ifNull: ['$stock', 0] }, threshold] },
-      ],
-    },
-  };
 }
 
 /** Local calendar YYYY-MM — invoice issueDate/date are date strings, not ISO datetimes. */
@@ -141,9 +126,9 @@ export const getDashboardSummary = asyncHandler(async (req: Request, res: Respon
     ]),
     PurchaseOrder.countDocuments({ ...filter, status: { $in: ['Draft', 'Sent'] } }),
     Product.countDocuments({ ...filter, ...productLowStockFilter() }),
-    RawMaterial.countDocuments({ ...filter, $expr: { $lte: ['$stock', { $ifNull: ['$reorderLevel', 0] }] } }),
-    SemiFinishedProduct.countDocuments({ ...filter, $expr: { $lte: ['$stock', { $ifNull: ['$reorderLevel', 0] }] } }),
-    FinishedGood.countDocuments({ ...filter, $expr: { $lte: ['$stock', { $ifNull: ['$reorderLevel', 0] }] } }),
+    RawMaterial.countDocuments({ ...filter, ...rawMaterialLowStockFilter() }),
+    SemiFinishedProduct.countDocuments({ ...filter, ...quantityMinStockLowStockFilter() }),
+    FinishedGood.countDocuments({ ...filter, ...quantityMinStockLowStockFilter() }),
     Promise.all([
       RawMaterial.aggregate([{ $match: filter }, { $group: { _id: null, v: { $sum: { $multiply: [{ $ifNull: ['$stock', 0] }, { $ifNull: ['$cost', 0] }] } } } }]),
       SemiFinishedProduct.aggregate([{ $match: filter }, { $group: { _id: null, v: { $sum: { $multiply: [{ $ifNull: ['$stock', 0] }, { $ifNull: ['$cost', 0] }] } } } }]),

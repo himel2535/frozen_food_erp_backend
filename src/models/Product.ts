@@ -20,6 +20,8 @@ const productSchema = new Schema(
     stock: { type: Number, default: 0 },
     minStock: { type: Number, default: 0 },
     reorderLevel: { type: Number, default: 0 },
+    stockDurationDays: { type: Number, default: 0 },
+    stockDurationStartedAt: { type: Date },
     uom: String,
     defaultWarehouse: String,
     warehouseStock: Schema.Types.Mixed,

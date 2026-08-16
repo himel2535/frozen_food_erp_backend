@@ -36,6 +36,7 @@ import {
 } from '../models/index.js';
 import { registerExtendedRoutes, EXTENDED_API_ENDPOINTS } from './extendedRoutes.js';
 import { getDashboardSummary } from '../controllers/dashboardController.js';
+import { listLowStockAlerts } from '../controllers/lowStockAlertsController.js';
 import {
   getSalesReport,
   getProductSalesReport,
@@ -94,6 +95,7 @@ const productCtrl = createCrudController(Product, {
   searchFields: ['legacyId', 'name', 'sku', 'category'],
   legacyIdPrefix: 'PROD',
   autoFields: { sku: 'SKU' },
+  stockDurationQtyField: 'stock',
   onUpdated: syncProductLineSnapshots,
 });
 
@@ -240,6 +242,7 @@ const rawMaterialCtrl = createCrudController(RawMaterial, {
   resourceName: 'Raw material',
   searchFields: ['legacyId', 'name', 'category'],
   legacyIdPrefix: 'RM',
+  stockDurationQtyField: 'quantity',
 });
 
 const semiFinishedCtrl = createCrudController(SemiFinishedProduct, {
@@ -319,6 +322,7 @@ apiRouter.get('/', (_req, res) => {
       stockTransfers: '/api/v1/stock-transfers',
       stockAdjustments: '/api/v1/stock-adjustments',
       dashboardSummary: '/api/v1/dashboard/summary',
+      lowStockAlerts: '/api/v1/inventory/low-stock-alerts',
       notifications: '/api/v1/notifications',
       reports: {
         sales: '/api/v1/reports/sales',
@@ -340,6 +344,7 @@ apiRouter.get('/', (_req, res) => {
 });
 
 apiRouter.get('/dashboard/summary', cacheGetResponse(60_000), getDashboardSummary);
+apiRouter.get('/inventory/low-stock-alerts', listLowStockAlerts);
 apiRouter.get('/notifications', listNotifications);
 
 apiRouter.get('/balance-sheet/summary', cacheGetResponse(REPORT_CACHE_MS), getBalanceSheetSummary);

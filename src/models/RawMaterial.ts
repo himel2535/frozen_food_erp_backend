@@ -11,6 +11,8 @@ const rawMaterialSchema = new Schema(
     quantity: { type: Number, default: 0 },
     price: { type: Number, default: 0 },
     threshold: { type: Number, default: 0 },
+    stockDurationDays: { type: Number, default: 0 },
+    stockDurationStartedAt: { type: Date },
     warehouseId: String,
     location: String,
     supplierId: String,
