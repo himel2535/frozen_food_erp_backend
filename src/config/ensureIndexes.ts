@@ -1,4 +1,6 @@
 import mongoose from 'mongoose';
+import '../models/PmProject.js';
+import '../models/PmTask.js';
 
 const TENANT_STATUS = { tenantId: 1 as const, status: 1 as const };
 const TENANT_CREATED = { tenantId: 1 as const, createdAt: -1 as const };
@@ -30,6 +32,7 @@ export async function ensureDatabaseIndexes(): Promise<void> {
     'PurchaseOrder', 'ProductionOrder', 'Project', 'Department', 'Designation', 'LeaveRequest',
     'Attendance', 'PayrollRun', 'SalaryStructure', 'Asset', 'Recipe', 'GoodsReceived',
     'PurchaseBill', 'PurchasePayment', 'PurchaseReturn', 'Journal', 'LedgerEntry', 'CashboxEntry',
+    'PmProject', 'PmTask',
   ];
 
   for (const name of listModels) {
@@ -44,6 +47,13 @@ export async function ensureDatabaseIndexes(): Promise<void> {
   withIndexes('RawMaterial', [{ tenantId: 1, quantity: 1 }]);
   withIndexes('SemiFinishedProduct', [{ tenantId: 1, quantity: 1 }]);
   withIndexes('FinishedGood', [{ tenantId: 1, quantity: 1 }]);
+  withIndexes('PmProject', [{ tenantId: 1, managerId: 1 }, { tenantId: 1, deadline: 1 }]);
+  withIndexes('PmTask', [
+    { tenantId: 1, projectId: 1 },
+    { tenantId: 1, assignedTo: 1 },
+    { tenantId: 1, deadline: 1 },
+    { tenantId: 1, assignedTo: 1, status: 1, deadline: 1 },
+  ]);
 
   await Promise.allSettled(tasks);
   console.log(`[db] Ensured ${tasks.length} compound indexes`);

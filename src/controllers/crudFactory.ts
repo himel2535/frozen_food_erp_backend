@@ -57,6 +57,8 @@ export function createCrudController<T extends Record<string, unknown>>(
     }) => void | Promise<void>;
     /** Optional post-update hook. Must not throw to the client. */
     onUpdated?: (previous: Record<string, unknown>, next: Record<string, unknown>) => void | Promise<void>;
+    /** Optional post-delete hook. Must not throw to the client. */
+    onDeleted?: (doc: Record<string, unknown>) => void | Promise<void>;
     /** When set, stamp stockDurationStartedAt on create and reset it when this qty field increases. */
     stockDurationQtyField?: string;
   },
@@ -70,6 +72,7 @@ export function createCrudController<T extends Record<string, unknown>>(
     listCachePrefix,
     onCreated,
     onUpdated,
+    onDeleted,
     stockDurationQtyField,
   } = options;
 
@@ -141,7 +144,18 @@ export function createCrudController<T extends Record<string, unknown>>(
       (filter as Record<string, unknown>).status = status;
     }
 
-    for (const key of ['category', 'section', 'department', 'period', 'productType', 'type'] as const) {
+    for (const key of [
+      'category',
+      'section',
+      'department',
+      'period',
+      'productType',
+      'type',
+      'priority',
+      'managerId',
+      'assignedTo',
+      'projectId',
+    ] as const) {
       const val = req.query[key];
       if (val && val !== 'all') {
         (filter as Record<string, unknown>)[key] = String(val);
@@ -225,7 +239,15 @@ export function createCrudController<T extends Record<string, unknown>>(
     const doc = await model.findByIdAndDelete(req.params.id);
     if (!doc) throw notFound(`${resourceName} not found`);
     clearCaches();
-    scheduleRemovedCloudinaryDeletes(doc.toObject() as Record<string, unknown>);
+    const removed = doc.toObject() as Record<string, unknown>;
+    scheduleRemovedCloudinaryDeletes(removed);
+    if (onDeleted) {
+      try {
+        await onDeleted(removed);
+      } catch (err) {
+        console.error(`[${resourceName}] onDeleted failed`, err);
+      }
+    }
     sendMessage(res, `${resourceName} deleted`);
   });
 

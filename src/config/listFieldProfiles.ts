@@ -42,6 +42,8 @@ export const LIST_FIELD_PROFILES: Record<string, string> = {
   Journal: 'legacyId tenantId reference status total date createdAt updatedAt',
   'Ledger entry': 'legacyId tenantId account status debit credit date createdAt updatedAt',
   'Cashbox entry': 'legacyId tenantId type status amount date createdAt updatedAt',
+  'Pm project': 'legacyId tenantId name description managerId managerName startDate deadline priority status progress taskCount completedTaskCount createdAt updatedAt',
+  'Pm task': 'legacyId tenantId projectId projectName name assignedTo assignedToName assignedToEmail startDate deadline priority status attachmentUrl attachmentName createdAt updatedAt',
 };
 
 export function listFieldsFor(resourceName: string): string | undefined {

@@ -58,6 +58,18 @@ import { cacheGetResponse, dashboardSummaryCacheKey } from '../middleware/respon
 import { requireInventoryEdit } from '../middleware/requireInventoryEdit.js';
 import { createAndEmitNotification } from '../services/notify.js';
 import { getNextProductSku } from '../controllers/productSkuController.js';
+import { PmProject } from '../models/PmProject.js';
+import { PmTask } from '../models/PmTask.js';
+import {
+  afterPmProjectDeleted,
+  afterPmTaskCreated,
+  afterPmTaskDeleted,
+  afterPmTaskUpdated,
+  getPmProjectSummary,
+  getPmTeamOverview,
+  listMyPmTasks,
+  patchPmTaskStatus,
+} from '../controllers/pmController.js';
 
 const REPORT_CACHE_MS = 60_000;
 
@@ -399,3 +411,30 @@ apiRouter.post('/stock-transfers/:id/complete', completeStockTransfer);
 apiRouter.post('/stock-adjustments/:id/approve', approveStockAdjustment);
 
 registerExtendedRoutes(apiRouter);
+
+const pmProjectCtrl = createCrudController(PmProject, {
+  listCachePrefix: '/api/v1/pm-projects',
+  resourceName: 'Pm project',
+  searchFields: ['legacyId', 'name', 'managerName'],
+  defaultSort: { createdAt: -1 },
+  legacyIdPrefix: 'PMP',
+  onDeleted: afterPmProjectDeleted,
+});
+
+const pmTaskCtrl = createCrudController(PmTask, {
+  listCachePrefix: '/api/v1/pm-tasks',
+  resourceName: 'Pm task',
+  searchFields: ['legacyId', 'name', 'projectName', 'assignedToName'],
+  defaultSort: { createdAt: -1 },
+  legacyIdPrefix: 'PMT',
+  onCreated: afterPmTaskCreated,
+  onUpdated: afterPmTaskUpdated,
+  onDeleted: afterPmTaskDeleted,
+});
+
+apiRouter.get('/pm-projects/summary', getPmProjectSummary);
+apiRouter.get('/pm-tasks/my', listMyPmTasks);
+apiRouter.get('/pm-tasks/team-overview', getPmTeamOverview);
+apiRouter.patch('/pm-tasks/:id/status', patchPmTaskStatus);
+registerCrud(apiRouter, '/pm-projects', pmProjectCtrl);
+registerCrud(apiRouter, '/pm-tasks', pmTaskCtrl);

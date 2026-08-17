@@ -49,6 +49,8 @@ export { StockTransfer } from './StockTransfer.js';
 export { StockAdjustment } from './StockAdjustment.js';
 
 export { InboxNotification } from './InboxNotification.js';
+export { PmProject } from './PmProject.js';
+export { PmTask } from './PmTask.js';
 
 export { Sequence } from './Sequence.js';
 

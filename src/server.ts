@@ -4,6 +4,7 @@ import { connectDatabase, disconnectDatabase } from './config/database.js';
 import { env } from './config/env.js';
 import { disconnectRedis, initRedis } from './lib/redisClient.js';
 import { attachSocket } from './realtime/socket.js';
+import { startPmDeadlineNotificationJob } from './jobs/pmDeadlineNotifications.js';
 
 async function main() {
   await connectDatabase();
@@ -17,6 +18,7 @@ async function main() {
     console.log(`[server] Health → /health`);
     console.log(`[server] API    → /api/v1`);
   });
+  startPmDeadlineNotificationJob();
 
   const shutdown = async (signal: string) => {
     console.log(`\n[server] ${signal} received — shutting down`);
