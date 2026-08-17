@@ -46,7 +46,8 @@ function attachCacheWriter(res: Response, key: string, ttlMs: number) {
 
 export function dashboardSummaryCacheKey(req: Request): string {
   const tenantId = String(req.query.tenantId ?? 'default');
-  return `/api/v1/dashboard/summary?tenantId=${encodeURIComponent(tenantId)}`;
+  const scope = String(req.query.scope ?? 'full').toLowerCase();
+  return `/api/v1/dashboard/summary?tenantId=${encodeURIComponent(tenantId)}&scope=${encodeURIComponent(scope)}`;
 }
 
 /** GET cache — Redis when REDIS_URL is set, otherwise in-memory. */
