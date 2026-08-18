@@ -36,6 +36,7 @@ import {
 } from '../models/index.js';
 import { registerExtendedRoutes, EXTENDED_API_ENDPOINTS } from './extendedRoutes.js';
 import { getDashboardSummary, getDashboardTopProducts } from '../controllers/dashboardController.js';
+import { getDashboardBusinessAlerts } from '../controllers/dashboardBusinessAlerts.js';
 import { listLowStockAlerts } from '../controllers/lowStockAlertsController.js';
 import {
   getSalesReport,
@@ -54,7 +55,7 @@ import {
 } from '../controllers/accountingController.js';
 import { getSalarySheetSummary } from '../controllers/payrollController.js';
 import { listNotifications } from '../controllers/notificationController.js';
-import { cacheGetResponse, dashboardSummaryCacheKey, dashboardTopProductsCacheKey } from '../middleware/responseCache.js';
+import { cacheGetResponse, dashboardSummaryCacheKey, dashboardTopProductsCacheKey, dashboardBusinessAlertsCacheKey } from '../middleware/responseCache.js';
 import { requireInventoryEdit } from '../middleware/requireInventoryEdit.js';
 import { createAndEmitNotification } from '../services/notify.js';
 import { getNextProductSku } from '../controllers/productSkuController.js';
@@ -362,6 +363,7 @@ apiRouter.get('/', (_req, res) => {
 
 apiRouter.get('/dashboard/summary', cacheGetResponse(60_000, dashboardSummaryCacheKey), getDashboardSummary);
 apiRouter.get('/dashboard/top-products', cacheGetResponse(60_000, dashboardTopProductsCacheKey), getDashboardTopProducts);
+apiRouter.get('/dashboard/business-alerts', cacheGetResponse(60_000, dashboardBusinessAlertsCacheKey), getDashboardBusinessAlerts);
 apiRouter.get('/inventory/low-stock-alerts', listLowStockAlerts);
 apiRouter.get('/notifications', listNotifications);
 
