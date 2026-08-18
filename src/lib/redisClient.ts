@@ -62,6 +62,24 @@ export async function redisDelByPrefix(prefix: string): Promise<void> {
   }
 }
 
+/** Delete Redis keys matching a glob pattern (e.g. erp:cache:*products*). */
+export async function redisDelByPattern(pattern: string): Promise<void> {
+  if (!isRedisReady() || !client) return;
+  try {
+    const keys: string[] = [];
+    for await (const key of client.scanIterator({ MATCH: pattern, COUNT: 100 })) {
+      keys.push(String(key));
+      if (keys.length >= 200) {
+        await client.del(keys);
+        keys.length = 0;
+      }
+    }
+    if (keys.length) await client.del(keys);
+  } catch {
+    /* ignore */
+  }
+}
+
 export async function disconnectRedis(): Promise<void> {
   if (!client) return;
   try {

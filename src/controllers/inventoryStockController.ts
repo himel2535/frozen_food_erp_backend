@@ -11,6 +11,26 @@ import { StockAdjustment } from '../models/StockAdjustment.js';
 import { notFound, badRequest } from '../utils/ApiError.js';
 import { sendSuccess } from '../utils/apiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { clearResponseCache } from '../middleware/responseCache.js';
+
+function clearInventoryCaches() {
+  clearResponseCache('/api/v1/dashboard/summary');
+  clearResponseCache('/api/v1/dashboard/top-products');
+  clearResponseCache('/api/v1/dashboard/business-alerts');
+  clearResponseCache('/api/v1/reports/');
+  for (const prefix of [
+    '/api/v1/products',
+    '/api/v1/raw-materials',
+    '/api/v1/semi-finished-products',
+    '/api/v1/finished-goods',
+    '/api/v1/stock-in',
+    '/api/v1/stock-out',
+    '/api/v1/stock-transfers',
+    '/api/v1/stock-adjustments',
+  ]) {
+    clearResponseCache(prefix);
+  }
+}
 
 type WarehouseStock = Record<string, number>;
 type InventoryKind = 'product' | 'rawMaterial' | 'semiFinished' | 'finishedGood';
@@ -127,6 +147,7 @@ export const approveStockIn = asyncHandler(async (req: Request, res: Response) =
   doc.status = 'Approved';
   doc.approvedBy = String(req.body?.approvedBy ?? 'System');
   await doc.save();
+  clearInventoryCaches();
   sendSuccess(res, doc.toJSON());
 });
 
@@ -146,6 +167,7 @@ export const completeStockOut = asyncHandler(async (req: Request, res: Response)
   await applyInventoryDelta(String(doc.productId), String(doc.warehouseId ?? ''), -qty);
   doc.status = 'Completed';
   await doc.save();
+  clearInventoryCaches();
   sendSuccess(res, doc.toJSON());
 });
 
@@ -184,6 +206,7 @@ export const completeStockTransfer = asyncHandler(async (req: Request, res: Resp
 
   doc.status = 'Completed';
   await doc.save();
+  clearInventoryCaches();
   sendSuccess(res, doc.toJSON());
 });
 
@@ -202,5 +225,6 @@ export const approveStockAdjustment = asyncHandler(async (req: Request, res: Res
   doc.status = 'Completed';
   doc.approvedBy = String(req.body?.approvedBy ?? 'System');
   await doc.save();
+  clearInventoryCaches();
   sendSuccess(res, doc.toJSON());
 });
