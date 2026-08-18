@@ -5,6 +5,7 @@ import {
   Lead,
   SalesOrder,
   Product,
+  PosTransaction,
   RawMaterial,
   SemiFinishedProduct,
   FinishedGood,
@@ -192,6 +193,118 @@ async function loadExtraSummary(filter: Filter, legs: Legs) {
     totalInventoryValue: rmVal + sfVal + fgVal,
   };
 }
+
+const CANCELLED_OR_DRAFT = ['draft', 'cancelled', 'canceled', 'Draft', 'Cancelled', 'Canceled'];
+
+function lineUnwindPipeline(tenantId: string) {
+  return [
+    { $match: { tenantId, status: { $nin: CANCELLED_OR_DRAFT } } },
+    { $unwind: { path: '$items', preserveNullAndEmptyArrays: false } },
+    {
+      $project: {
+        sku: {
+          $toLower: {
+            $trim: {
+              input: {
+                $toString: { $ifNull: ['$items.sku', { $ifNull: ['$items.productId', ''] }] },
+              },
+            },
+          },
+        },
+        name: {
+          $trim: {
+            input: { $toString: { $ifNull: ['$items.name', { $ifNull: ['$items.description', ''] }] } },
+          },
+        },
+        qty: { $ifNull: ['$items.qty', 0] },
+        revenue: {
+          $cond: [
+            { $gt: [{ $ifNull: ['$items.total', 0] }, 0] },
+            { $ifNull: ['$items.total', 0] },
+            {
+              $multiply: [
+                { $ifNull: ['$items.qty', 0] },
+                { $ifNull: ['$items.rate', { $ifNull: ['$items.price', 0] }] },
+              ],
+            },
+          ],
+        },
+        imageUrl: { $ifNull: ['$items.imageUrl', ''] },
+      },
+    },
+  ];
+}
+
+/** Ranked products from SO/invoice/POS line items — keeps list endpoints item-free. */
+export const getDashboardTopProducts = asyncHandler(async (req: Request, res: Response) => {
+  const tenantId = String(req.query.tenantId ?? 'default');
+  const limit = Math.min(Math.max(Number(req.query.limit) || 5, 1), 20);
+  const started = Date.now();
+  const linePipeline = lineUnwindPipeline(tenantId);
+
+  const [salesLines, invoiceLines, posLines, products] = await Promise.all([
+    SalesOrder.aggregate(linePipeline),
+    Invoice.aggregate(linePipeline),
+    PosTransaction.aggregate(linePipeline),
+    Product.find({ tenantId }).select('sku legacyId name category imageUrl').lean(),
+  ]);
+
+  const catalog = new Map<string, { name: string; category: string; imageUrl: string; identity: string }>();
+  const indexCatalog = (
+    key: unknown,
+    row: Record<string, unknown>,
+  ) => {
+    const normalized = String(key ?? '').trim().toLowerCase();
+    if (!normalized || catalog.has(normalized)) return;
+    catalog.set(normalized, {
+      identity: normalized,
+      name: String(row.name ?? 'Product').trim() || 'Product',
+      category: String(row.category ?? '').trim() || '—',
+      imageUrl: String(row.imageUrl ?? ''),
+    });
+  };
+  for (const product of products as Array<Record<string, unknown>>) {
+    indexCatalog(product.sku, product);
+    indexCatalog(product.legacyId, product);
+    indexCatalog(product.name, product);
+  }
+
+  type Acc = { name: string; category: string; sold: number; revenue: number; imageUrl: string };
+  const map = new Map<string, Acc>();
+  for (const line of [...salesLines, ...invoiceLines, ...posLines] as Array<{
+    sku?: string;
+    name?: string;
+    qty?: number;
+    revenue?: number;
+    imageUrl?: string;
+  }>) {
+    const qty = Number(line.qty ?? 0);
+    const revenue = Number(line.revenue ?? 0);
+    if (qty <= 0 && revenue <= 0) continue;
+    const hit = catalog.get(String(line.sku ?? '').trim().toLowerCase())
+      ?? catalog.get(String(line.name ?? '').trim().toLowerCase());
+    if (!hit) continue;
+    const existing = map.get(hit.identity) ?? {
+      name: hit.name,
+      category: hit.category,
+      sold: 0,
+      revenue: 0,
+      imageUrl: hit.imageUrl,
+    };
+    existing.sold += qty;
+    existing.revenue += revenue;
+    if (!existing.imageUrl && line.imageUrl) existing.imageUrl = String(line.imageUrl);
+    map.set(hit.identity, existing);
+  }
+
+  const rows = Array.from(map.values())
+    .filter((row) => row.sold > 0 || row.revenue > 0)
+    .sort((a, b) => b.revenue - a.revenue || b.sold - a.sold)
+    .slice(0, limit);
+
+  console.log(`[timing] GET /dashboard/top-products total=${Date.now() - started}ms rows=${rows.length}`);
+  sendSuccess(res, rows);
+});
 
 /** Dashboard KPI aggregates — computed in MongoDB instead of shipping full collections. */
 export const getDashboardSummary = asyncHandler(async (req: Request, res: Response) => {

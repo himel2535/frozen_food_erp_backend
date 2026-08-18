@@ -78,6 +78,7 @@ export function createCrudController<T extends Record<string, unknown>>(
 
   function clearCaches() {
     clearResponseCache('/api/v1/dashboard/summary');
+    clearResponseCache('/api/v1/dashboard/top-products');
     clearResponseCache('/api/v1/reports/');
     if (listCachePrefix) clearResponseCache(listCachePrefix);
   }

@@ -50,6 +50,12 @@ export function dashboardSummaryCacheKey(req: Request): string {
   return `/api/v1/dashboard/summary?tenantId=${encodeURIComponent(tenantId)}&scope=${encodeURIComponent(scope)}`;
 }
 
+export function dashboardTopProductsCacheKey(req: Request): string {
+  const tenantId = String(req.query.tenantId ?? 'default');
+  const limit = String(req.query.limit ?? '5');
+  return `/api/v1/dashboard/top-products?tenantId=${encodeURIComponent(tenantId)}&limit=${encodeURIComponent(limit)}`;
+}
+
 /** GET cache — Redis when REDIS_URL is set, otherwise in-memory. */
 export function cacheGetResponse(ttlMs: number, keyFn: CacheKeyFn = (req) => req.originalUrl) {
   return async (req: Request, res: Response, next: NextFunction) => {
