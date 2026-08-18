@@ -73,6 +73,8 @@ import {
 } from '../controllers/pmController.js';
 
 const REPORT_CACHE_MS = 60_000;
+/** Master-data list GET cache — aligns with client lookup TTL (5 min). */
+const LOOKUP_LIST_CACHE_MS = 300_000;
 
 export const apiRouter = Router();
 
@@ -385,7 +387,7 @@ registerCrud(apiRouter, '/customers', customerCtrl, { listCacheMs: 30000 });
 apiRouter.get('/products/next-sku', getNextProductSku);
 registerCrud(apiRouter, '/products', productCtrl, { listCacheMs: 30000 });
 registerCrud(apiRouter, '/suppliers', supplierCtrl, { listCacheMs: 30000 });
-registerCrud(apiRouter, '/employees', employeeCtrl, { listCacheMs: 30000 });
+registerCrud(apiRouter, '/employees', employeeCtrl, { listCacheMs: LOOKUP_LIST_CACHE_MS });
 registerCrud(apiRouter, '/sales-orders', salesOrderCtrl, { listCacheMs: 30000 });
 registerCrud(apiRouter, '/invoices', invoiceCtrl, { listCacheMs: 30000 });
 registerCrud(apiRouter, '/leads', leadCtrl, { listCacheMs: 30000 });
@@ -397,9 +399,9 @@ registerCrud(apiRouter, '/payments', paymentCtrl, { listCacheMs: 30000 });
 registerCrud(apiRouter, '/returns', returnCtrl, { listCacheMs: 30000 });
 registerCrud(apiRouter, '/complaints', complaintCtrl, { listCacheMs: 30000 });
 registerCrud(apiRouter, '/pos-transactions', posCtrl, { listCacheMs: 30000 });
-registerCrud(apiRouter, '/categories', categoryCtrl, { listCacheMs: 30000 });
-registerCrud(apiRouter, '/units', unitCtrl, { listCacheMs: 30000 });
-registerCrud(apiRouter, '/warehouses', warehouseCtrl, { listCacheMs: 30000 });
+registerCrud(apiRouter, '/categories', categoryCtrl, { listCacheMs: LOOKUP_LIST_CACHE_MS });
+registerCrud(apiRouter, '/units', unitCtrl, { listCacheMs: LOOKUP_LIST_CACHE_MS });
+registerCrud(apiRouter, '/warehouses', warehouseCtrl, { listCacheMs: LOOKUP_LIST_CACHE_MS });
 registerCrud(apiRouter, '/raw-materials', rawMaterialCtrl, { listCacheMs: 30000 });
 registerCrud(apiRouter, '/semi-finished-products', semiFinishedCtrl, { listCacheMs: 30000 });
 registerCrud(apiRouter, '/finished-goods', finishedGoodCtrl, { listCacheMs: 30000 });
