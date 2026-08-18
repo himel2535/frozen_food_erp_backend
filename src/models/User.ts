@@ -1,6 +1,7 @@
 import mongoose, { Schema, type InferSchemaType } from 'mongoose';
 import { timestampsConfig } from './shared.js';
 import bcrypt from 'bcrypt';
+import { invalidateAuthUserCache } from '../middleware/authUserCache.js';
 
 const userSchema = new Schema(
   {
@@ -52,6 +53,21 @@ userSchema.pre('save', async function (this: any, next) {
 userSchema.methods.comparePassword = async function (candidatePassword: string) {
   return bcrypt.compare(candidatePassword, this.password);
 };
+
+function invalidateUserAuthCache(doc: { _id?: unknown } | null | undefined) {
+  if (doc?._id) invalidateAuthUserCache(String(doc._id));
+  else invalidateAuthUserCache();
+}
+
+userSchema.post('save', function (doc) {
+  invalidateUserAuthCache(doc as { _id?: unknown });
+});
+userSchema.post('findOneAndUpdate', function (doc) {
+  invalidateUserAuthCache(doc as { _id?: unknown } | null);
+});
+userSchema.post('findOneAndDelete', function (doc) {
+  invalidateUserAuthCache(doc as { _id?: unknown } | null);
+});
 
 export type UserDocument = InferSchemaType<typeof userSchema> & {
   _id: mongoose.Types.ObjectId;

@@ -4,6 +4,7 @@ import { ApiError } from '../utils/ApiError.js';
 import { requireAuth } from '../middleware/requireAuth.js';
 import { scheduleReplacedCloudinaryDeletes } from '../utils/cloudinary.js';
 import mongoose from 'mongoose';
+import { invalidateAuthUserCache } from '../middleware/authUserCache.js';
 
 export const adminRouter = Router();
 
@@ -143,6 +144,7 @@ adminRouter.put('/users/:id', async (req, res, next) => {
     }
     
     await user.save();
+    invalidateAuthUserCache(user._id.toString());
 
     scheduleReplacedCloudinaryDeletes(previous, {
       imageUrl: user.imageUrl,

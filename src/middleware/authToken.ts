@@ -1,6 +1,7 @@
 import type { Request } from 'express';
 import jwt from 'jsonwebtoken';
 import { User } from '../models/User.js';
+import { getCachedAuthUser, setCachedAuthUser } from './authUserCache.js';
 
 export type AuthUser = {
   _id: unknown;
@@ -50,6 +51,22 @@ export function extractAccessTokenFromHandshake(handshake: {
 export async function authenticateAccessToken(token: string): Promise<AuthUser> {
   const secret = process.env.JWT_SECRET || 'fallback-secret-for-dev';
   const decoded = jwt.verify(token, secret) as { userId: string; tenantId?: string };
+
+  const cached = getCachedAuthUser(decoded.userId);
+  if (cached) {
+    if (cached.status === 'disabled') {
+      throw new Error('Unauthorized: User not found or disabled');
+    }
+    const authUser = { ...cached } as AuthUser;
+    if (!authUser.tenantId && decoded.tenantId) {
+      authUser.tenantId = decoded.tenantId;
+    }
+    if (process.env.AUTH_USER_CACHE_DEBUG === '1') {
+      console.log(`[auth-user-cache] hit ${decoded.userId}`);
+    }
+    return authUser;
+  }
+
   const user = await User.findById(decoded.userId).lean();
   if (!user || (user as { status?: string }).status === 'disabled') {
     throw new Error('Unauthorized: User not found or disabled');
@@ -57,6 +74,10 @@ export async function authenticateAccessToken(token: string): Promise<AuthUser> 
   const authUser = user as AuthUser;
   if (!authUser.tenantId && decoded.tenantId) {
     authUser.tenantId = decoded.tenantId;
+  }
+  setCachedAuthUser(decoded.userId, authUser);
+  if (process.env.AUTH_USER_CACHE_DEBUG === '1') {
+    console.log(`[auth-user-cache] miss ${decoded.userId}`);
   }
   return authUser;
 }
