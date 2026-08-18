@@ -199,7 +199,6 @@ export function createCrudController<T extends Record<string, unknown>>(
 
   const create = asyncHandler(async (req: Request, res: Response) => {
     const doc = await createDocument(req.body as Record<string, unknown>);
-    clearCaches();
     if (onCreated) {
       try {
         await onCreated(doc);
@@ -208,6 +207,7 @@ export function createCrudController<T extends Record<string, unknown>>(
       }
     }
     sendSuccess(res, doc.toJSON(), undefined, 201);
+    setImmediate(() => clearCaches());
   });
 
   const update = asyncHandler(async (req: Request, res: Response) => {
@@ -222,7 +222,6 @@ export function createCrudController<T extends Record<string, unknown>>(
       runValidators: true,
     }).lean();
     if (!doc) throw notFound(`${resourceName} not found`);
-    clearCaches();
     scheduleReplacedCloudinaryDeletes(
       previous as Record<string, unknown>,
       doc as Record<string, unknown>,
@@ -235,12 +234,12 @@ export function createCrudController<T extends Record<string, unknown>>(
       }
     }
     sendSuccess(res, doc);
+    setImmediate(() => clearCaches());
   });
 
   const remove = asyncHandler(async (req: Request, res: Response) => {
     const doc = await model.findByIdAndDelete(req.params.id);
     if (!doc) throw notFound(`${resourceName} not found`);
-    clearCaches();
     const removed = doc.toObject() as Record<string, unknown>;
     scheduleRemovedCloudinaryDeletes(removed);
     if (onDeleted) {
@@ -251,6 +250,7 @@ export function createCrudController<T extends Record<string, unknown>>(
       }
     }
     sendMessage(res, `${resourceName} deleted`);
+    setImmediate(() => clearCaches());
   });
 
   const bulkSeed = asyncHandler(async (req: Request, res: Response) => {
@@ -261,8 +261,8 @@ export function createCrudController<T extends Record<string, unknown>>(
       if (err?.insertedDocs) return err.insertedDocs;
       throw err;
     });
-    clearCaches();
     sendSuccess(res, inserted, { count: inserted.length }, 201);
+    setImmediate(() => clearCaches());
   });
 
   return { list, getById, create, update, remove, bulkSeed };
