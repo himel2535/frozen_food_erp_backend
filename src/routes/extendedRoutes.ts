@@ -1,5 +1,6 @@
 import type { Router } from 'express';
 import { createCrudController } from '../controllers/crudFactory.js';
+import { cacheGetResponse } from '../middleware/responseCache.js';
 import {
   PurchaseOrder,
   GoodsReceived,
@@ -42,8 +43,24 @@ import {
   SalarySheetEntry,
 } from '../models/extendedResources.js';
 
-function registerCrud(router: Router, path: string, ctrl: ReturnType<typeof createCrudController>) {
-  router.get(path, ctrl.list);
+const REPORT_CACHE_MS = 60_000;
+const STANDARD_LIST_CACHE_MS = 30_000;
+
+const REPORT_PATHS = new Set([
+  '/trial-balance',
+  '/profit-loss',
+  '/balance-sheet',
+  '/salary-sheet',
+]);
+
+function registerCrud(
+  router: Router,
+  path: string,
+  ctrl: ReturnType<typeof createCrudController>,
+  opts?: { listCacheMs?: number },
+) {
+  const listCacheMs = opts?.listCacheMs ?? (REPORT_PATHS.has(path) ? REPORT_CACHE_MS : STANDARD_LIST_CACHE_MS);
+  router.get(path, cacheGetResponse(listCacheMs), ctrl.list);
   router.post(`${path}/seed`, ctrl.bulkSeed);
   router.get(`${path}/:id`, ctrl.getById);
   router.post(path, ctrl.create);
@@ -58,6 +75,7 @@ type ResourceDef = {
   resourceName: string;
   searchFields: string[];
   legacyIdPrefix: string;
+  listCacheMs?: number;
 };
 
 const EXTENDED_RESOURCES: ResourceDef[] = [
@@ -113,7 +131,8 @@ export function registerExtendedRoutes(router: Router) {
       searchFields: def.searchFields,
       defaultSort: { createdAt: -1 },
       legacyIdPrefix: def.legacyIdPrefix,
+      listCachePrefix: `/api/v1${def.path}`,
     });
-    registerCrud(router, def.path, ctrl);
+    registerCrud(router, def.path, ctrl, { listCacheMs: def.listCacheMs });
   }
 }
