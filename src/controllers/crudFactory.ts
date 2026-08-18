@@ -11,6 +11,7 @@ import {
   scheduleRemovedCloudinaryDeletes,
   scheduleReplacedCloudinaryDeletes,
 } from '../utils/cloudinary.js';
+import { markPerfLeg, timePerfLeg } from '../middleware/perfTrace.js';
 
 type SearchFields = string[];
 
@@ -76,12 +77,14 @@ export function createCrudController<T extends Record<string, unknown>>(
     stockDurationQtyField,
   } = options;
 
-  function clearCaches() {
+  function clearCaches(req?: Request) {
+    const started = Date.now();
     clearResponseCache('/api/v1/dashboard/summary');
     clearResponseCache('/api/v1/dashboard/top-products');
     clearResponseCache('/api/v1/dashboard/business-alerts');
     clearResponseCache('/api/v1/reports/');
     if (listCachePrefix) clearResponseCache(listCachePrefix);
+    if (req) markPerfLeg(req, 'cacheInvalidate', Date.now() - started);
   }
 
   function preparePayload(body: Record<string, unknown>, forCreate: boolean): Record<string, unknown> {
@@ -198,7 +201,7 @@ export function createCrudController<T extends Record<string, unknown>>(
   });
 
   const create = asyncHandler(async (req: Request, res: Response) => {
-    const doc = await createDocument(req.body as Record<string, unknown>);
+    const doc = await timePerfLeg(req, 'mongo', () => createDocument(req.body as Record<string, unknown>));
     if (onCreated) {
       try {
         await onCreated(doc);

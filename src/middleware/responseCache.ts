@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { sendSuccess } from '../utils/apiResponse.js';
 import { isRedisReady, redisDelByPattern, redisGet, redisSet } from '../lib/redisClient.js';
+import { markPerfLeg } from './perfTrace.js';
 
 type CacheEntry = {
   body: unknown;
@@ -134,7 +135,9 @@ export function cacheGetResponse(ttlMs: number, keyFn: CacheKeyFn = buildTenantC
 
     if (isRedisReady()) {
       try {
+        const redisStart = Date.now();
         const raw = await redisGet(redisPhysicalKey(key));
+        if (req.perfTrace) markPerfLeg(req, 'redis', Date.now() - redisStart);
         if (res.headersSent) return;
         if (raw) {
           try {

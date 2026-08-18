@@ -147,8 +147,8 @@ export const approveStockIn = asyncHandler(async (req: Request, res: Response) =
   doc.status = 'Approved';
   doc.approvedBy = String(req.body?.approvedBy ?? 'System');
   await doc.save();
-  clearInventoryCaches();
   sendSuccess(res, doc.toJSON());
+  setImmediate(() => clearInventoryCaches());
 });
 
 export const completeStockOut = asyncHandler(async (req: Request, res: Response) => {
@@ -167,8 +167,8 @@ export const completeStockOut = asyncHandler(async (req: Request, res: Response)
   await applyInventoryDelta(String(doc.productId), String(doc.warehouseId ?? ''), -qty);
   doc.status = 'Completed';
   await doc.save();
-  clearInventoryCaches();
   sendSuccess(res, doc.toJSON());
+  setImmediate(() => clearInventoryCaches());
 });
 
 export const completeStockTransfer = asyncHandler(async (req: Request, res: Response) => {
@@ -206,8 +206,8 @@ export const completeStockTransfer = asyncHandler(async (req: Request, res: Resp
 
   doc.status = 'Completed';
   await doc.save();
-  clearInventoryCaches();
   sendSuccess(res, doc.toJSON());
+  setImmediate(() => clearInventoryCaches());
 });
 
 export const approveStockAdjustment = asyncHandler(async (req: Request, res: Response) => {
@@ -225,6 +225,6 @@ export const approveStockAdjustment = asyncHandler(async (req: Request, res: Res
   doc.status = 'Completed';
   doc.approvedBy = String(req.body?.approvedBy ?? 'System');
   await doc.save();
-  clearInventoryCaches();
   sendSuccess(res, doc.toJSON());
+  setImmediate(() => clearInventoryCaches());
 });

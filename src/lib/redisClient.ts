@@ -80,6 +80,25 @@ export async function redisDelByPattern(pattern: string): Promise<void> {
   }
 }
 
+export async function redisDel(key: string): Promise<boolean> {
+  if (!isRedisReady() || !client) return false;
+  try {
+    await client.del(key);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function redisTtl(key: string): Promise<number | null> {
+  if (!isRedisReady() || !client) return null;
+  try {
+    return await client.pTTL(key);
+  } catch {
+    return null;
+  }
+}
+
 export async function disconnectRedis(): Promise<void> {
   if (!client) return;
   try {
