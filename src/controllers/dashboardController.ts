@@ -76,7 +76,16 @@ async function loadKpiSummary(tenantId: string, filter: Filter, monthPrefix: str
       { $group: { _id: null, count: { $sum: 1 }, pipelineValue: { $sum: { $ifNull: ['$expectedValue', 0] } } } },
     ]), legs),
     timeNamed('customerDue', () => Customer.aggregate([
-      { $match: filter },
+      {
+        $match: {
+          ...filter,
+          $or: [
+            { totalDue: { $gt: 0 } },
+            { totalDue: { $exists: false }, due: { $gt: 0 } },
+            { totalDue: null, due: { $gt: 0 } }
+          ]
+        }
+      },
       {
         $group: {
           _id: null,
@@ -132,7 +141,16 @@ async function loadExtraSummary(filter: Filter, legs: Legs) {
       { $group: { _id: null, count: { $sum: 1 }, total: { $sum: { $ifNull: ['$total', 0] } } } },
     ]), legs),
     timeNamed('supplierDue', () => PurchaseOrder.aggregate([
-      { $match: filter },
+      {
+        $match: {
+          ...filter,
+          $or: [
+            { due: { $gt: 0 } },
+            { due: { $exists: false }, balance: { $gt: 0 } },
+            { due: null, balance: { $gt: 0 } }
+          ]
+        }
+      },
       {
         $group: {
           _id: null,
@@ -196,7 +214,7 @@ async function loadExtraSummary(filter: Filter, legs: Legs) {
 
 const CANCELLED_OR_DRAFT = ['draft', 'cancelled', 'canceled', 'Draft', 'Cancelled', 'Canceled'];
 
-function lineUnwindPipeline(tenantId: string) {
+function lineUnwindPipeline(tenantId: string, limit: number): any[] {
   return [
     { $match: { tenantId, status: { $nin: CANCELLED_OR_DRAFT } } },
     { $unwind: { path: '$items', preserveNullAndEmptyArrays: false } },
@@ -232,6 +250,29 @@ function lineUnwindPipeline(tenantId: string) {
         imageUrl: { $ifNull: ['$items.imageUrl', ''] },
       },
     },
+    {
+      $group: {
+        _id: {
+          sku: '$sku',
+          name: '$name',
+        },
+        sold: { $sum: '$qty' },
+        revenue: { $sum: '$revenue' },
+        imageUrl: { $first: '$imageUrl' },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        sku: '$_id.sku',
+        name: '$_id.name',
+        sold: 1,
+        revenue: 1,
+        imageUrl: 1,
+      },
+    },
+    { $sort: { revenue: -1, sold: -1 } },
+    { $limit: limit },
   ];
 }
 
@@ -240,14 +281,51 @@ export const getDashboardTopProducts = asyncHandler(async (req: Request, res: Re
   const tenantId = String(req.query.tenantId ?? 'default');
   const limit = Math.min(Math.max(Number(req.query.limit) || 5, 1), 20);
   const started = Date.now();
-  const linePipeline = lineUnwindPipeline(tenantId);
+  
+  // Fetch top 50 per source so we have enough items to merge in JS
+  const aggregationLimit = Math.max(limit * 5, 50);
+  const linePipeline = lineUnwindPipeline(tenantId, aggregationLimit);
 
-  const [salesLines, invoiceLines, posLines, products] = await Promise.all([
+  const [salesLines, invoiceLines, posLines] = await Promise.all([
     SalesOrder.aggregate(linePipeline),
     Invoice.aggregate(linePipeline),
     PosTransaction.aggregate(linePipeline),
-    Product.find({ tenantId }).select('sku legacyId name category imageUrl').lean(),
   ]);
+
+  // Collect skus and names from the top matching aggregated rows
+  const skusSet = new Set<string>();
+  const namesSet = new Set<string>();
+  const allLines = [...salesLines, ...invoiceLines, ...posLines] as Array<{
+    sku?: string;
+    name?: string;
+    sold?: number;
+    revenue?: number;
+    imageUrl?: string;
+  }>;
+
+  for (const line of allLines) {
+    if (line.sku) {
+      skusSet.add(line.sku);
+      skusSet.add(line.sku.toUpperCase());
+      skusSet.add(line.sku.toLowerCase());
+    }
+    if (line.name) {
+      namesSet.add(line.name);
+      namesSet.add(line.name.toUpperCase());
+      namesSet.add(line.name.toLowerCase());
+    }
+  }
+
+  const products = skusSet.size > 0 || namesSet.size > 0
+    ? await Product.find({
+        tenantId,
+        $or: [
+          { sku: { $in: Array.from(skusSet) } },
+          { legacyId: { $in: Array.from(skusSet) } },
+          { name: { $in: Array.from(namesSet) } },
+        ],
+      }).select('sku legacyId name category imageUrl').lean()
+    : [];
 
   const catalog = new Map<string, { name: string; category: string; imageUrl: string; identity: string }>();
   const indexCatalog = (
@@ -271,14 +349,8 @@ export const getDashboardTopProducts = asyncHandler(async (req: Request, res: Re
 
   type Acc = { name: string; category: string; sold: number; revenue: number; imageUrl: string };
   const map = new Map<string, Acc>();
-  for (const line of [...salesLines, ...invoiceLines, ...posLines] as Array<{
-    sku?: string;
-    name?: string;
-    qty?: number;
-    revenue?: number;
-    imageUrl?: string;
-  }>) {
-    const qty = Number(line.qty ?? 0);
+  for (const line of allLines) {
+    const qty = Number(line.sold ?? 0);
     const revenue = Number(line.revenue ?? 0);
     if (qty <= 0 && revenue <= 0) continue;
     const hit = catalog.get(String(line.sku ?? '').trim().toLowerCase())

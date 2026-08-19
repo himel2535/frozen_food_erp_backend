@@ -88,12 +88,12 @@ function summarize(category: Category, count: number, items: AlertItem[]) {
 async function loadCustomerDue(tenantId: string, legs: Legs) {
   const filter = {
     tenantId,
-    $or: [{ totalDue: { $gt: 0 } }, { due: { $gt: 0 } }],
+    totalDue: { $gt: 0 },
   };
   const [count, docs] = await Promise.all([
     timeNamed('customerDueCount', () => Customer.countDocuments(filter), legs),
     timeNamed('customerDueItems', () =>
-      Customer.find(filter).select('legacyId name company totalDue due status').limit(ITEM_CAP).lean(),
+      Customer.find(filter).select('legacyId name company totalDue status').limit(ITEM_CAP).lean(),
       legs),
   ]);
   const items: AlertItem[] = (docs as Array<Record<string, unknown>>).map((doc) => {
@@ -392,7 +392,11 @@ async function loadPaymentsDueToday(tenantId: string, legs: Legs) {
 async function loadSupplierDue(tenantId: string, legs: Legs) {
   const filter = {
     tenantId,
-    $expr: { $gt: [{ $ifNull: ['$due', { $ifNull: ['$balance', 0] }] }, 0] },
+    $or: [
+      { due: { $gt: 0 } },
+      { due: { $exists: false }, balance: { $gt: 0 } },
+      { due: null, balance: { $gt: 0 } }
+    ]
   };
   const [count, docs] = await Promise.all([
     timeNamed('supplierDueCount', () => PurchaseOrder.countDocuments(filter), legs),

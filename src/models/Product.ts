@@ -5,7 +5,7 @@ const productSchema = new Schema(
   {
     tenantId: tenantField,
     legacyId: legacyIdField,
-    sku: { type: String, trim: true, index: true },
+    sku: { type: String, trim: true },
     name: { type: String, required: true, trim: true },
     category: String,
     productType: {
@@ -36,6 +36,7 @@ const productSchema = new Schema(
 );
 
 productSchema.index({ tenantId: 1, sku: 1 }, { unique: true, sparse: true });
+productSchema.index({ tenantId: 1, createdAt: -1 });
 productSchema.index({ tenantId: 1, name: 'text', sku: 'text', category: 'text' });
 
 export type ProductDocument = InferSchemaType<typeof productSchema> & { _id: mongoose.Types.ObjectId };

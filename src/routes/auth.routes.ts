@@ -74,7 +74,6 @@ authRouter.post('/login', async (req, res, next) => {
 
     res.json({
       success: true,
-      token,
       user: {
         uid: user._id.toString(),
         email: user.email,
@@ -95,7 +94,11 @@ authRouter.post('/login', async (req, res, next) => {
 
 // POST /api/v1/auth/logout
 authRouter.post('/logout', (_req, res) => {
-  res.clearCookie('token');
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+  });
   res.json({ success: true });
 });
 

@@ -22,6 +22,7 @@ const categorySchema = new Schema(
 );
 
 categorySchema.index({ tenantId: 1, legacyId: 1 }, { unique: true, sparse: true });
+categorySchema.index({ tenantId: 1, createdAt: -1 });
 categorySchema.index({ tenantId: 1, name: 1 });
 
 export type CategoryDocument = InferSchemaType<typeof categorySchema> & { _id: mongoose.Types.ObjectId };

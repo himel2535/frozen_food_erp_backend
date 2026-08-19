@@ -29,31 +29,28 @@ export async function aggregateMaxToySkuNumber(tenantId: string): Promise<number
   return top?.skuNum ?? 0;
 }
 
-async function ensureProductToySkuSequence(tenantId: string): Promise<void> {
-  const existing = await Sequence.findOne({ tenantId, key: PRODUCT_TOY_SKU_SEQUENCE_KEY }).lean();
-  if (existing) return;
-
-  const maxNum = await aggregateMaxToySkuNumber(tenantId);
-  try {
-    await Sequence.create({ tenantId, key: PRODUCT_TOY_SKU_SEQUENCE_KEY, value: maxNum });
-  } catch (err) {
-    const code = (err as { code?: number }).code;
-    if (code !== 11000) throw err;
-  }
-}
-
 /** Atomically reserve the next TOY SKU for a tenant. */
 export async function reserveNextProductSku(tenantId = 'default'): Promise<string> {
-  await ensureProductToySkuSequence(tenantId);
-
   const updated = await Sequence.findOneAndUpdate(
     { tenantId, key: PRODUCT_TOY_SKU_SEQUENCE_KEY },
     { $inc: { value: 1 } },
-    { new: true },
+    { new: true, upsert: true, setDefaultsOnInsert: true },
   );
 
   if (!updated) {
     throw new Error('Failed to reserve next product SKU');
+  }
+
+  if (Number(updated.value ?? 0) === 1) {
+    const maxNum = await aggregateMaxToySkuNumber(tenantId);
+    if (maxNum > 1) {
+      const synced = await Sequence.findOneAndUpdate(
+        { tenantId, key: PRODUCT_TOY_SKU_SEQUENCE_KEY },
+        { $set: { value: maxNum + 1 } },
+        { new: true },
+      );
+      return formatToySku(Number(synced?.value ?? maxNum + 1));
+    }
   }
 
   return formatToySku(Number(updated.value ?? 0));

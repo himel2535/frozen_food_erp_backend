@@ -18,6 +18,7 @@ const unitSchema = new Schema(
 );
 
 unitSchema.index({ tenantId: 1, legacyId: 1 }, { unique: true, sparse: true });
+unitSchema.index({ tenantId: 1, createdAt: -1 });
 unitSchema.index({ tenantId: 1, code: 1 }, { unique: true, sparse: true });
 
 export type UnitDocument = InferSchemaType<typeof unitSchema> & { _id: mongoose.Types.ObjectId };

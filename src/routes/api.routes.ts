@@ -441,5 +441,5 @@ apiRouter.get('/pm-projects/summary', getPmProjectSummary);
 apiRouter.get('/pm-tasks/my', listMyPmTasks);
 apiRouter.get('/pm-tasks/team-overview', getPmTeamOverview);
 apiRouter.patch('/pm-tasks/:id/status', patchPmTaskStatus);
-registerCrud(apiRouter, '/pm-projects', pmProjectCtrl);
+registerCrud(apiRouter, '/pm-projects', pmProjectCtrl, { listCacheMs: 30000 });
 registerCrud(apiRouter, '/pm-tasks', pmTaskCtrl);
