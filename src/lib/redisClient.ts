@@ -4,6 +4,16 @@ import { env } from '../config/env.js';
 let client: RedisClientType | null = null;
 let ready = false;
 
+export const KEY_PREFIX = 'frozen_food:';
+
+/** Prepend keyPrefix 'frozen_food:' if not already present. */
+export function addKeyPrefix(key: string): string {
+  if (key.startsWith(KEY_PREFIX)) {
+    return key;
+  }
+  return `${KEY_PREFIX}${key}`;
+}
+
 export function isRedisReady() {
   return ready && client !== null;
 }
@@ -30,7 +40,7 @@ export async function initRedis(): Promise<void> {
 export async function redisGet(key: string): Promise<string | null> {
   if (!isRedisReady() || !client) return null;
   try {
-    return await client.get(key);
+    return await client.get(addKeyPrefix(key));
   } catch {
     return null;
   }
@@ -39,7 +49,7 @@ export async function redisGet(key: string): Promise<string | null> {
 export async function redisSet(key: string, value: string, ttlMs: number): Promise<void> {
   if (!isRedisReady() || !client) return;
   try {
-    await client.set(key, value, { PX: ttlMs });
+    await client.set(addKeyPrefix(key), value, { PX: ttlMs });
   } catch {
     /* in-memory fallback handles misses */
   }
@@ -48,8 +58,9 @@ export async function redisSet(key: string, value: string, ttlMs: number): Promi
 export async function redisDelByPrefix(prefix: string): Promise<void> {
   if (!isRedisReady() || !client) return;
   try {
+    const pattern = addKeyPrefix(`${prefix}*`);
     const keys: string[] = [];
-    for await (const key of client.scanIterator({ MATCH: `${prefix}*`, COUNT: 100 })) {
+    for await (const key of client.scanIterator({ MATCH: pattern, COUNT: 100 })) {
       keys.push(String(key));
       if (keys.length >= 200) {
         await client.del(keys);
@@ -66,8 +77,9 @@ export async function redisDelByPrefix(prefix: string): Promise<void> {
 export async function redisDelByPattern(pattern: string): Promise<void> {
   if (!isRedisReady() || !client) return;
   try {
+    const matchPattern = addKeyPrefix(pattern);
     const keys: string[] = [];
-    for await (const key of client.scanIterator({ MATCH: pattern, COUNT: 100 })) {
+    for await (const key of client.scanIterator({ MATCH: matchPattern, COUNT: 100 })) {
       keys.push(String(key));
       if (keys.length >= 200) {
         await client.del(keys);
@@ -83,7 +95,7 @@ export async function redisDelByPattern(pattern: string): Promise<void> {
 export async function redisDel(key: string): Promise<boolean> {
   if (!isRedisReady() || !client) return false;
   try {
-    await client.del(key);
+    await client.del(addKeyPrefix(key));
     return true;
   } catch {
     return false;
@@ -93,7 +105,7 @@ export async function redisDel(key: string): Promise<boolean> {
 export async function redisTtl(key: string): Promise<number | null> {
   if (!isRedisReady() || !client) return null;
   try {
-    return await client.pTTL(key);
+    return await client.pTTL(addKeyPrefix(key));
   } catch {
     return null;
   }

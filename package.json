@@ -1,8 +1,8 @@
 {
-  "name": "toys-factory-erp-backend",
+  "name": "frozen-food-erp-backend",
   "version": "1.0.0",
   "private": true,
-  "description": "Express + Mongoose API for Toys Factory ERP (standalone — frontend integration optional)",
+  "description": "Express + Mongoose API for Frozen Food ERP (standalone — frontend integration optional)",
   "type": "module",
   "main": "dist/server.js",
   "scripts": {

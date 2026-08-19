@@ -8,7 +8,7 @@ export const healthRouter = Router();
 
 healthRouter.get('/', (_req, res) => {
   sendSuccess(res, {
-    service: 'toys-factory-erp-backend',
+    service: 'frozen-food-erp-backend',
     status: 'ok',
     environment: env.nodeEnv,
     timestamp: new Date().toISOString(),
