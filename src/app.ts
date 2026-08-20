@@ -38,7 +38,7 @@ export function createApp() {
 
   app.get('/', (_req, res) => {
     res.json({
-      name: 'Toys Factory ERP Backend',
+      name: 'Food Fun Agro Foods Backend',
       version: '1.0.0',
       docs: '/api/v1',
       health: '/health',

@@ -314,7 +314,7 @@ const stockAdjustmentCtrl = createCrudController(StockAdjustment, {
 apiRouter.get('/', (_req, res) => {
   res.json({
     success: true,
-    message: 'Toys Factory ERP API v1',
+    message: 'Food Fun Agro Foods API v1',
     endpoints: {
       customers: '/api/v1/customers',
       products: '/api/v1/products',

@@ -1,4 +1,4 @@
-# Toys Factory ERP
+# Food Fun Agro Foods
 
 A full-stack ERP for toy manufacturing and wholesale: sales, inventory, production, accounting, and HR in one product.
 
